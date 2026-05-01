@@ -5,11 +5,16 @@ Tab Out replaces Chrome's new tab page with a local dashboard of your open tabs.
 ## What It Does
 
 - Groups open tabs by domain.
-- Separates common homepages into a cleanup group.
+- Shows each open tab as a link preview card with title, description, favicon, and social card image when available.
+- Caches link previews in `chrome.storage.local`.
 - Jumps to an existing tab instead of opening duplicates.
-- Closes individual tabs, duplicate tabs, whole domain groups, or all open tabs.
+- Closes individual tabs, duplicate tabs, or all open tabs.
 - Saves tabs for later in `chrome.storage.local`.
 - Runs as a pure Manifest V3 Chrome extension.
+
+## Permissions
+
+The extension requests `host_permissions` for `http://*/*` and `https://*/*` so it can fetch each open page's Open Graph/Twitter metadata and display preview images locally in the new-tab dashboard.
 
 ## Install Locally
 
