@@ -5,6 +5,9 @@
   "description": "Keep tabs on your tabs. New tab page that groups your open tabs by domain and lets you close them with style.",
   "permissions": ["tabs", "activeTab", "storage"],
   "host_permissions": ["http://*/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http: https:; img-src 'self' data: blob: http: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+  },
   "chrome_url_overrides": { "newtab": "index.html" },
   "background": { "service_worker": "background.js" },
   "action": {
