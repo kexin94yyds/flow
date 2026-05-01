@@ -251,6 +251,69 @@ async function saveTabForLater(tab) {
   await chrome.storage.local.set({ deferred });
 }
 
+function loadFlowItems() {
+  try {
+    const raw = localStorage.getItem('flowItems');
+    const items = raw ? JSON.parse(raw) : [];
+    return Array.isArray(items) ? items : [];
+  } catch {
+    return [];
+  }
+}
+
+function inferFlowPlatform(url) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    if (hostname === 'x.com' || hostname === 'twitter.com') return 'Twitter';
+    if (hostname.includes('youtube.com') || hostname === 'youtu.be') return 'YouTube';
+    if (hostname.includes('bilibili.com')) return 'Bilibili';
+    return 'Web';
+  } catch {
+    return 'Web';
+  }
+}
+
+function buildFlowItem(tab) {
+  const preview = getCachedLinkPreview(tab.url) || previewForTab(tab);
+  const title = preview.title || tab.title || tab.url || '未命名';
+  const note = preview.description || domainFromUrl(tab.url) || '';
+
+  return {
+    id: `tabout-${Date.now()}-${hashString(tab.url || title)}`,
+    url: tab.url || '',
+    title,
+    category: 'read_later',
+    note,
+    image: preview.imageUrl || '',
+    platform: inferFlowPlatform(tab.url),
+    createdAt: Date.now(),
+    pinned: false,
+    source: 'tab-out',
+  };
+}
+
+function saveTabToFlow(tab) {
+  if (!tab?.url) return 'skipped';
+
+  const items = loadFlowItems();
+  const flowItem = buildFlowItem(tab);
+  const existing = items.find(item => item.url === flowItem.url);
+
+  if (existing) {
+    existing.title = flowItem.title || existing.title;
+    existing.note = flowItem.note || existing.note;
+    existing.image = flowItem.image || existing.image;
+    existing.platform = flowItem.platform || existing.platform;
+    existing.updatedAt = Date.now();
+    localStorage.setItem('flowItems', JSON.stringify(items));
+    return 'updated';
+  }
+
+  items.unshift(flowItem);
+  localStorage.setItem('flowItems', JSON.stringify(items));
+  return 'saved';
+}
+
 /**
  * getSavedTabs()
  *
@@ -1205,6 +1268,10 @@ function renderTabPreviewCard(tab, urlCounts) {
             ${ICONS.archive}
             Save
           </button>
+          <button class="action-btn flow-save" data-action="save-to-flow" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}">
+            ${ICONS.archive}
+            Flow
+          </button>
           <button class="action-btn close-tabs" data-action="close-single-tab" data-tab-url="${safeUrl}">
             ${ICONS.close}
             Close
@@ -1697,6 +1764,18 @@ document.addEventListener('click', async (e) => {
 
     showToast('Saved for later');
     await renderDeferredColumn();
+    return;
+  }
+
+  if (action === 'save-to-flow') {
+    e.stopPropagation();
+    const tabUrl = actionEl.dataset.tabUrl;
+    const tabTitle = actionEl.dataset.tabTitle || tabUrl;
+    if (!tabUrl) return;
+
+    const tab = openTabs.find(t => t.url === tabUrl) || { url: tabUrl, title: tabTitle };
+    const result = saveTabToFlow(tab);
+    showToast(result === 'updated' ? 'Updated in Flow' : 'Saved to Flow');
     return;
   }
 

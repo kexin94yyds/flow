@@ -10,6 +10,7 @@ Tab Out replaces Chrome's new tab page with a local dashboard of your open tabs.
 - Jumps to an existing tab instead of opening duplicates.
 - Closes individual tabs, duplicate tabs, or all open tabs.
 - Saves tabs for later in `chrome.storage.local`.
+- Opens Flow inside the same extension and can save a tab into Flow's web collection.
 - Runs as a pure Manifest V3 Chrome extension.
 
 ## Permissions
