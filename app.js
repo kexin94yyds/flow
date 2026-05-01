@@ -19,6 +19,7 @@ document.addEventListener('error', (event) => {
   const target = event.target;
   if (target instanceof HTMLImageElement && target.dataset.hideOnError === 'true') {
     target.style.display = 'none';
+    target.closest('.preview-media')?.classList.add('is-missing-image');
   }
 }, true);
 
@@ -32,6 +33,11 @@ document.addEventListener('error', (event) => {
 
 // All open tabs — populated by fetchOpenTabs()
 let openTabs = [];
+
+const LINK_PREVIEW_CACHE_KEY = 'link_previews';
+const LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
+const linkPreviewRequests = new Set();
+let linkPreviewCache = {};
 
 /**
  * fetchOpenTabs()
@@ -736,6 +742,160 @@ function getRealTabs() {
       !url.startsWith('edge://') &&
       !url.startsWith('brave://')
     );
+  });
+}
+
+function isPreviewableUrl(url) {
+  return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
+}
+
+async function loadLinkPreviewCache() {
+  try {
+    const result = await chrome.storage.local.get(LINK_PREVIEW_CACHE_KEY);
+    linkPreviewCache = result[LINK_PREVIEW_CACHE_KEY] || {};
+  } catch {
+    linkPreviewCache = {};
+  }
+}
+
+async function saveLinkPreviewCache() {
+  try {
+    await chrome.storage.local.set({ [LINK_PREVIEW_CACHE_KEY]: linkPreviewCache });
+  } catch {
+    // Cache failures should not break the new-tab page.
+  }
+}
+
+function getCachedLinkPreview(url) {
+  const cached = linkPreviewCache[url];
+  if (!cached) return null;
+  if (!cached.fetchedAt || Date.now() - cached.fetchedAt > LINK_PREVIEW_MAX_AGE) return null;
+  return cached;
+}
+
+function normalizeText(value) {
+  return (value || '').replace(/\s+/g, ' ').trim();
+}
+
+function getMetaContent(doc, selectors) {
+  for (const selector of selectors) {
+    const value = doc.querySelector(selector)?.getAttribute('content');
+    if (value) return normalizeText(value);
+  }
+  return '';
+}
+
+function getLinkHref(doc, selectors) {
+  for (const selector of selectors) {
+    const value = doc.querySelector(selector)?.getAttribute('href');
+    if (value) return normalizeText(value);
+  }
+  return '';
+}
+
+function absolutizeUrl(value, baseUrl) {
+  if (!value) return '';
+  try {
+    return new URL(value, baseUrl).href;
+  } catch {
+    return '';
+  }
+}
+
+function fallbackFaviconUrl(url) {
+  try {
+    const domain = new URL(url).hostname;
+    return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : '';
+  } catch {
+    return '';
+  }
+}
+
+async function fetchLinkPreview(tab) {
+  const url = tab.url;
+  const fallbackTitle = normalizeText(tab.title || url);
+  const fallback = {
+    url,
+    title: fallbackTitle,
+    description: '',
+    imageUrl: '',
+    faviconUrl: tab.favIconUrl || fallbackFaviconUrl(url),
+    fetchedAt: Date.now(),
+  };
+
+  if (!isPreviewableUrl(url)) return fallback;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      credentials: 'omit',
+      redirect: 'follow',
+    });
+    const contentType = response.headers.get('content-type') || '';
+    if (!response.ok || !contentType.includes('text/html')) return fallback;
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const finalUrl = response.url || url;
+
+    const title = normalizeText(
+      getMetaContent(doc, [
+        'meta[property="og:title"]',
+        'meta[name="twitter:title"]',
+      ]) || doc.querySelector('title')?.textContent || fallbackTitle
+    );
+    const description = getMetaContent(doc, [
+      'meta[property="og:description"]',
+      'meta[name="twitter:description"]',
+      'meta[name="description"]',
+    ]);
+    const imageUrl = absolutizeUrl(getMetaContent(doc, [
+      'meta[property="og:image"]',
+      'meta[property="og:image:url"]',
+      'meta[name="twitter:image"]',
+      'meta[name="twitter:image:src"]',
+    ]), finalUrl);
+    const faviconUrl = absolutizeUrl(getLinkHref(doc, [
+      'link[rel="apple-touch-icon"]',
+      'link[rel="icon"]',
+      'link[rel="shortcut icon"]',
+    ]), finalUrl) || fallback.faviconUrl;
+
+    return {
+      url,
+      title: title || fallback.title,
+      description,
+      imageUrl,
+      faviconUrl,
+      fetchedAt: Date.now(),
+    };
+  } catch {
+    return fallback;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function ensureLinkPreview(tab) {
+  if (!isPreviewableUrl(tab.url) || getCachedLinkPreview(tab.url) || linkPreviewRequests.has(tab.url)) return;
+
+  linkPreviewRequests.add(tab.url);
+  const preview = await fetchLinkPreview(tab);
+  linkPreviewCache[tab.url] = preview;
+  await saveLinkPreviewCache();
+  linkPreviewRequests.delete(tab.url);
+  updatePreviewCard(tab, preview);
+}
+
+function queueLinkPreviewFetches(tabs) {
+  const previewable = tabs.filter(tab => isPreviewableUrl(tab.url)).slice(0, 48);
+  previewable.forEach((tab, index) => {
+    setTimeout(() => {
+      ensureLinkPreview(tab);
+    }, index * 120);
   });
 }
 
