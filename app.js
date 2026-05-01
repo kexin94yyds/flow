@@ -34,7 +34,7 @@ document.addEventListener('error', (event) => {
 // All open tabs — populated by fetchOpenTabs()
 let openTabs = [];
 
-const LINK_PREVIEW_CACHE_KEY = 'link_previews_v2';
+const LINK_PREVIEW_CACHE_KEY = 'link_previews_v3';
 const LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 const linkPreviewRequests = new Set();
 let linkPreviewCache = {};
@@ -770,6 +770,7 @@ function getCachedLinkPreview(url) {
   const cached = linkPreviewCache[url];
   if (!cached) return null;
   if (!cached.fetchedAt || Date.now() - cached.fetchedAt > LINK_PREVIEW_MAX_AGE) return null;
+  if (!cached.imageUrl) return null;
   return cached;
 }
 
@@ -820,6 +821,51 @@ function fallbackFaviconUrl(url) {
   }
 }
 
+function decodeJsonStringValue(value) {
+  if (!value) return '';
+  try {
+    return JSON.parse(`"${value}"`);
+  } catch {
+    return value
+      .replace(/\\\//g, '/')
+      .replace(/\\u0026/g, '&')
+      .replace(/&amp;/g, '&');
+  }
+}
+
+function isXStatusUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace(/^www\./, '');
+    return (
+      (hostname === 'x.com' || hostname === 'twitter.com') &&
+      /\/status\/\d+/.test(parsed.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function extractXImageUrl(html, url) {
+  if (!isXStatusUrl(url) || !html) return '';
+
+  // X often omits tweet media from OG tags and places it in INITIAL_STATE.
+  const patterns = [
+    /"media_url_https"\s*:\s*"([^"]+)"/,
+    /"media_url"\s*:\s*"([^"]+)"/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    const mediaUrl = match ? decodeJsonStringValue(match[1]) : '';
+    if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) {
+      return mediaUrl;
+    }
+  }
+
+  return '';
+}
+
 async function fetchLinkPreview(tab) {
   const url = tab.url;
   const fallbackTitle = normalizeText(tab.title || url);
@@ -867,7 +913,7 @@ async function fetchLinkPreview(tab) {
       'meta[property="og:image:url"]',
       'meta[name="twitter:image"]',
       'meta[name="twitter:image:src"]',
-    ]), finalUrl);
+    ]), finalUrl) || extractXImageUrl(html, finalUrl);
     const faviconUrl = absolutizeUrl(getLinkHref(doc, [
       'link[rel="apple-touch-icon"]',
       'link[rel="icon"]',
@@ -895,7 +941,7 @@ async function ensureLinkPreview(tab) {
 
   linkPreviewRequests.add(tab.url);
   const preview = await fetchLinkPreview(tab);
-  if (preview.fetched) {
+  if (preview.fetched && preview.imageUrl) {
     linkPreviewCache[tab.url] = preview;
     await saveLinkPreviewCache();
   }
@@ -904,7 +950,7 @@ async function ensureLinkPreview(tab) {
 }
 
 function queueLinkPreviewFetches(tabs) {
-  const previewable = tabs.filter(tab => isPreviewableUrl(tab.url)).slice(0, 48);
+  const previewable = tabs.filter(tab => isPreviewableUrl(tab.url));
   previewable.forEach((tab, index) => {
     setTimeout(() => {
       ensureLinkPreview(tab);
