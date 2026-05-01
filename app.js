@@ -1350,8 +1350,8 @@ async function renderStaticDashboard() {
   queueLinkPreviewFetches(realTabs);
 
   // --- Footer stats ---
-  const statTabs = document.getElementById('statTabs');
-  if (statTabs) statTabs.textContent = openTabs.length;
+  const statTabsEl = document.getElementById('statTabs');
+  if (statTabsEl) statTabsEl.textContent = openTabs.length;
 
   // --- Check for duplicate Tab Out tabs ---
   checkTabOutDupes();
