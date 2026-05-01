@@ -1344,6 +1344,22 @@ async function renderStaticDashboard() {
   await fetchOpenTabs();
   const realTabs = getRealTabs();
 
+  // --- Render open tabs as ClipBook-style link preview cards ---
+  await loadLinkPreviewCache();
+  renderOpenTabsAsPreviewCards(realTabs);
+  queueLinkPreviewFetches(realTabs);
+
+  // --- Footer stats ---
+  const statTabs = document.getElementById('statTabs');
+  if (statTabs) statTabs.textContent = openTabs.length;
+
+  // --- Check for duplicate Tab Out tabs ---
+  checkTabOutDupes();
+
+  // --- Render "Saved for Later" column ---
+  await renderDeferredColumn();
+  return;
+
   // --- Group tabs by domain ---
   // Landing pages (Gmail inbox, Twitter home, etc.) get their own special group
   // so they can be closed together without affecting content tabs on the same domain.
