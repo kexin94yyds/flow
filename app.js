@@ -1565,8 +1565,9 @@ document.addEventListener('click', async (e) => {
 
     playCloseSound();
 
-    // Animate the chip row out
+    // Animate the chip row/card out
     const chip = actionEl.closest('.page-chip');
+    const previewCard = actionEl.closest('.link-preview-card');
     if (chip) {
       const rect = chip.getBoundingClientRect();
       shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -1584,6 +1585,15 @@ document.addEventListener('click', async (e) => {
           }
         });
       }, 200);
+    }
+    if (previewCard) {
+      const rect = previewCard.getBoundingClientRect();
+      shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      previewCard.classList.add('closing');
+      setTimeout(() => {
+        previewCard.remove();
+        renderDashboard();
+      }, 250);
     }
 
     // Update footer
@@ -1616,13 +1626,21 @@ document.addEventListener('click', async (e) => {
     if (match) await chrome.tabs.remove(match.id);
     await fetchOpenTabs();
 
-    // Animate chip out
+    // Animate chip/card out
     const chip = actionEl.closest('.page-chip');
+    const previewCard = actionEl.closest('.link-preview-card');
     if (chip) {
       chip.style.transition = 'opacity 0.2s, transform 0.2s';
       chip.style.opacity    = '0';
       chip.style.transform  = 'scale(0.8)';
       setTimeout(() => chip.remove(), 200);
+    }
+    if (previewCard) {
+      previewCard.classList.add('closing');
+      setTimeout(() => {
+        previewCard.remove();
+        renderDashboard();
+      }, 250);
     }
 
     showToast('Saved for later');
@@ -1739,6 +1757,7 @@ document.addEventListener('click', async (e) => {
     }
 
     showToast('Closed duplicates, kept one copy each');
+    await renderDashboard();
     return;
   }
 
@@ -1750,12 +1769,17 @@ document.addEventListener('click', async (e) => {
     await closeTabsByUrls(allUrls);
     playCloseSound();
 
-    document.querySelectorAll('#openTabsMissions .mission-card').forEach(c => {
+    document.querySelectorAll('#openTabsMissions .mission-card, #openTabsMissions .link-preview-card').forEach(c => {
       shootConfetti(
         c.getBoundingClientRect().left + c.offsetWidth / 2,
         c.getBoundingClientRect().top  + c.offsetHeight / 2
       );
-      animateCardOut(c);
+      if (c.classList.contains('mission-card')) {
+        animateCardOut(c);
+      } else {
+        c.classList.add('closing');
+        setTimeout(() => c.remove(), 250);
+      }
     });
 
     showToast('All tabs closed. Fresh start.');
