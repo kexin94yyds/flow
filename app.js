@@ -34,7 +34,7 @@ document.addEventListener('error', (event) => {
 // All open tabs — populated by fetchOpenTabs()
 let openTabs = [];
 
-const LINK_PREVIEW_CACHE_KEY = 'link_previews';
+const LINK_PREVIEW_CACHE_KEY = 'link_previews_v2';
 const LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 const linkPreviewRequests = new Set();
 let linkPreviewCache = {};
@@ -830,6 +830,7 @@ async function fetchLinkPreview(tab) {
     imageUrl: '',
     faviconUrl: tab.favIconUrl || fallbackFaviconUrl(url),
     fetchedAt: Date.now(),
+    fetched: false,
   };
 
   if (!isPreviewableUrl(url)) return fallback;
@@ -880,6 +881,7 @@ async function fetchLinkPreview(tab) {
       imageUrl,
       faviconUrl,
       fetchedAt: Date.now(),
+      fetched: true,
     };
   } catch {
     return fallback;
@@ -893,8 +895,10 @@ async function ensureLinkPreview(tab) {
 
   linkPreviewRequests.add(tab.url);
   const preview = await fetchLinkPreview(tab);
-  linkPreviewCache[tab.url] = preview;
-  await saveLinkPreviewCache();
+  if (preview.fetched) {
+    linkPreviewCache[tab.url] = preview;
+    await saveLinkPreviewCache();
+  }
   linkPreviewRequests.delete(tab.url);
   updatePreviewCard(tab, preview);
 }
