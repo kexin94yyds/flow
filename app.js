@@ -1072,6 +1072,144 @@ function renderDomainCard(group) {
     </div>`;
 }
 
+function previewCardId(tab) {
+  return `preview-card-${tab.id || hashString(tab.url || '')}`;
+}
+
+function hashString(value) {
+  let hash = 0;
+  const str = String(value || '');
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function domainFromUrl(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
+function previewForTab(tab) {
+  const cached = getCachedLinkPreview(tab.url);
+  const domain = domainFromUrl(tab.url);
+  return cached || {
+    url: tab.url,
+    title: cleanTitle(smartTitle(stripTitleNoise(tab.title || ''), tab.url), domain) || tab.url,
+    description: domain,
+    imageUrl: '',
+    faviconUrl: tab.favIconUrl || fallbackFaviconUrl(tab.url),
+  };
+}
+
+function renderPreviewMedia(preview, title) {
+  const imageUrl = preview.imageUrl || '';
+  const className = imageUrl ? 'preview-media has-image' : 'preview-media is-missing-image';
+  return `
+    <div class="${className}">
+      <div class="preview-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Z" />
+        </svg>
+      </div>
+      ${imageUrl ? `<img class="preview-image" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
+    </div>`;
+}
+
+function renderTabPreviewCard(tab, urlCounts) {
+  const preview = previewForTab(tab);
+  const domain = domainFromUrl(tab.url);
+  const title = preview.title || tab.title || tab.url;
+  const description = preview.description || tab.url;
+  const faviconUrl = preview.faviconUrl || tab.favIconUrl || fallbackFaviconUrl(tab.url);
+  const safeUrl = escapeHtml(tab.url || '');
+  const safeTitle = escapeHtml(title);
+  const count = urlCounts[tab.url] || 1;
+  const dupeButton = count > 1
+    ? `<button class="action-btn" data-action="dedup-keep-one" data-dupe-urls="${encodeURIComponent(tab.url)}">Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}</button>`
+    : '';
+
+  return `
+    <article class="link-preview-card" id="${previewCardId(tab)}">
+      <div data-action="focus-tab" data-tab-url="${safeUrl}">
+        ${renderPreviewMedia(preview, title)}
+      </div>
+      <div class="preview-card-body">
+        <div class="preview-domain">
+          ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" data-hide-on-error="true">` : ''}
+          <span>${escapeHtml(domain || 'Open tab')}</span>
+          ${count > 1 ? `<span class="preview-dupe">${count}x</span>` : ''}
+        </div>
+        <h3 class="preview-title" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">${safeTitle}</h3>
+        <p class="preview-description">${escapeHtml(description)}</p>
+        <div class="preview-actions">
+          <button class="action-btn primary" data-action="focus-tab" data-tab-url="${safeUrl}">
+            ${ICONS.focus}
+            Open
+          </button>
+          <button class="action-btn save-tabs" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}">
+            ${ICONS.archive}
+            Save
+          </button>
+          <button class="action-btn close-tabs" data-action="close-single-tab" data-tab-url="${safeUrl}">
+            ${ICONS.close}
+            Close
+          </button>
+          ${dupeButton}
+        </div>
+      </div>
+    </article>`;
+}
+
+function updatePreviewCard(tab, preview) {
+  const card = document.getElementById(previewCardId(tab));
+  if (!card) return;
+
+  const title = preview.title || tab.title || tab.url;
+  const description = preview.description || tab.url;
+  const titleEl = card.querySelector('.preview-title');
+  const descriptionEl = card.querySelector('.preview-description');
+  const mediaEl = card.querySelector('.preview-media');
+  const faviconEl = card.querySelector('.preview-domain img');
+
+  if (titleEl) {
+    titleEl.textContent = title;
+    titleEl.setAttribute('title', title);
+  }
+  if (descriptionEl) descriptionEl.textContent = description;
+  if (mediaEl) mediaEl.outerHTML = renderPreviewMedia(preview, title);
+  if (faviconEl && preview.faviconUrl) faviconEl.setAttribute('src', preview.faviconUrl);
+}
+
+function renderOpenTabsAsPreviewCards(realTabs) {
+  const openTabsSection = document.getElementById('openTabsSection');
+  const openTabsMissionsEl = document.getElementById('openTabsMissions');
+  const openTabsSectionCount = document.getElementById('openTabsSectionCount');
+  const openTabsSectionTitle = document.getElementById('openTabsSectionTitle');
+
+  if (!openTabsSection || !openTabsMissionsEl || !openTabsSectionCount) return;
+
+  openTabsMissionsEl.classList.add('link-preview-grid');
+
+  if (realTabs.length === 0) {
+    openTabsSection.style.display = 'none';
+    return;
+  }
+
+  const urlCounts = {};
+  for (const tab of realTabs) urlCounts[tab.url] = (urlCounts[tab.url] || 0) + 1;
+  const duplicates = Object.values(urlCounts).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
+
+  if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open tabs';
+  openTabsSectionCount.innerHTML = `${realTabs.length} tab${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` &nbsp;&middot;&nbsp; ${duplicates} duplicate${duplicates !== 1 ? 's' : ''}` : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
+  openTabsMissionsEl.innerHTML = realTabs.map(tab => renderTabPreviewCard(tab, urlCounts)).join('');
+  openTabsSection.style.display = 'block';
+}
+
 
 /* ----------------------------------------------------------------
    SAVED FOR LATER — Render Checklist Column
