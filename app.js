@@ -777,6 +777,15 @@ function normalizeText(value) {
   return (value || '').replace(/\s+/g, ' ').trim();
 }
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function getMetaContent(doc, selectors) {
   for (const selector of selectors) {
     const value = doc.querySelector(selector)?.getAttribute('content');
