@@ -251,24 +251,9 @@ async function saveTabForLater(tab) {
   await chrome.storage.local.set({ deferred });
 }
 
-function hasExtensionStorage() {
-  return typeof chrome !== 'undefined'
-    && chrome.storage
-    && chrome.storage.local
-    && typeof chrome.storage.local.get === 'function'
-    && typeof chrome.storage.local.set === 'function';
-}
-
 async function loadFlowItems() {
-  if (hasExtensionStorage()) {
-    try {
-      const { flowItems = [] } = await chrome.storage.local.get('flowItems');
-      if (Array.isArray(flowItems)) {
-        return flowItems;
-      }
-    } catch (err) {
-      console.warn('[tab-out] Could not read flowItems from chrome.storage.local:', err);
-    }
+  if (window.FlowStorage?.loadFlowItems) {
+    return window.FlowStorage.loadFlowItems();
   }
 
   try {
@@ -281,12 +266,9 @@ async function loadFlowItems() {
 }
 
 async function saveFlowItems(items) {
-  if (hasExtensionStorage()) {
-    try {
-      await chrome.storage.local.set({ flowItems: items });
-    } catch (err) {
-      console.warn('[tab-out] Could not write flowItems to chrome.storage.local:', err);
-    }
+  if (window.FlowStorage?.saveFlowItems) {
+    await window.FlowStorage.saveFlowItems(items);
+    return;
   }
 
   localStorage.setItem('flowItems', JSON.stringify(items));
