@@ -252,6 +252,29 @@ async function saveTabForLater(tab) {
 }
 
 function loadFlowItems() {
+  throw new Error('loadFlowItems should be awaited');
+}
+
+function hasExtensionStorage() {
+  return typeof chrome !== 'undefined'
+    && chrome.storage
+    && chrome.storage.local
+    && typeof chrome.storage.local.get === 'function'
+    && typeof chrome.storage.local.set === 'function';
+}
+
+async function loadFlowItems() {
+  if (hasExtensionStorage()) {
+    try {
+      const { flowItems = [] } = await chrome.storage.local.get('flowItems');
+      if (Array.isArray(flowItems)) {
+        return flowItems;
+      }
+    } catch (err) {
+      console.warn('[tab-out] Could not read flowItems from chrome.storage.local:', err);
+    }
+  }
+
   try {
     const raw = localStorage.getItem('flowItems');
     const items = raw ? JSON.parse(raw) : [];
@@ -259,6 +282,18 @@ function loadFlowItems() {
   } catch {
     return [];
   }
+}
+
+async function saveFlowItems(items) {
+  if (hasExtensionStorage()) {
+    try {
+      await chrome.storage.local.set({ flowItems: items });
+    } catch (err) {
+      console.warn('[tab-out] Could not write flowItems to chrome.storage.local:', err);
+    }
+  }
+
+  localStorage.setItem('flowItems', JSON.stringify(items));
 }
 
 function inferFlowPlatform(url) {
@@ -292,10 +327,10 @@ function buildFlowItem(tab) {
   };
 }
 
-function saveTabToFlow(tab) {
+async function saveTabToFlow(tab) {
   if (!tab?.url) return 'skipped';
 
-  const items = loadFlowItems();
+  const items = await loadFlowItems();
   const flowItem = buildFlowItem(tab);
   const existing = items.find(item => item.url === flowItem.url);
 
@@ -305,12 +340,12 @@ function saveTabToFlow(tab) {
     existing.image = flowItem.image || existing.image;
     existing.platform = flowItem.platform || existing.platform;
     existing.updatedAt = Date.now();
-    localStorage.setItem('flowItems', JSON.stringify(items));
+    await saveFlowItems(items);
     return 'updated';
   }
 
   items.unshift(flowItem);
-  localStorage.setItem('flowItems', JSON.stringify(items));
+  await saveFlowItems(items);
   return 'saved';
 }
 
