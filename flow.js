@@ -33,6 +33,7 @@
   const mediaGrid = document.getElementById('mediaGrid');
   const mediaCount = document.getElementById('mediaCount');
   const mediaStatus = document.getElementById('mediaStatus');
+  const sortSelect = document.getElementById('sortSelect');
   const contentTail = document.getElementById('contentTail');
   const recentList = document.getElementById('recentList');
   const tagCloud = document.getElementById('tagCloud');
@@ -41,6 +42,7 @@
   const progressSummary = document.getElementById('progressSummary');
   const progressBarFill = document.getElementById('progressBarFill');
   const quickActions = document.getElementById('quickActions');
+  const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
 
   // 弹窗元素
   const noteModal = document.getElementById('noteModal');
@@ -61,6 +63,8 @@
   let currentNoteId = null;
   let currentEditId = null;
   let searchQuery = '';  // 搜索关键词
+  let currentSort = 'newest';
+  let currentView = 'grid';
 
   // 模式配置
   const modeConfig = {
@@ -439,6 +443,20 @@
     if (clearSearchBtn) {
       clearSearchBtn.addEventListener('click', clearSearch);
     }
+
+    if (sortSelect) {
+      sortSelect.addEventListener('change', (e) => {
+        currentSort = e.target.value || 'newest';
+        render();
+      });
+    }
+
+    viewToggleBtns.forEach(button => {
+      button.addEventListener('click', () => {
+        currentView = button.dataset.view || 'grid';
+        render();
+      });
+    });
   }
 
   // 清除搜索
@@ -483,6 +501,7 @@
   function render() {
     const mode = flowData.currentMode;
     const visibleContents = getVisibleContents(mode);
+    const searchInput = document.getElementById('searchInput');
 
     // 更新模式按钮
     modeBtns.forEach(btn => {
@@ -494,6 +513,15 @@
     if (modeSubtitle) {
       modeSubtitle.textContent = modeConfig[mode]?.subtitle || '把内容和笔记整理到同一个 Flow 里';
     }
+    if (searchInput) {
+      searchInput.placeholder = getSearchPlaceholder(mode);
+    }
+    if (sortSelect) {
+      sortSelect.value = currentSort;
+    }
+    viewToggleBtns.forEach(button => {
+      button.classList.toggle('active', button.dataset.view === currentView);
+    });
 
     // 渲染媒体区和右侧辅助列
     renderMedia(visibleContents);
@@ -513,10 +541,14 @@
       });
     }
 
-    // 排序：置顶的在前，然后按创建时间降序
     contents.sort((a, b) => {
-      if (a.pinned && !b.pinned) return -1;
-      if (!a.pinned && b.pinned) return 1;
+      if (currentSort === 'oldest') {
+        return getTimestamp(a.createdAt) - getTimestamp(b.createdAt);
+      }
+      if (currentSort === 'pinned') {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+      }
       return getTimestamp(b.createdAt) - getTimestamp(a.createdAt);
     });
 
@@ -541,6 +573,9 @@
     }
     if (mediaStatus) {
       mediaStatus.textContent = getStatusLabel(mode, contents);
+    }
+    if (mediaGrid) {
+      mediaGrid.classList.toggle('list-view', currentView === 'list');
     }
 
     if (contents.length === 0) {
@@ -657,6 +692,7 @@
     const platformText = getPlatformText(content.url, mode);
     const thumbHtml = getThumbHtml(content, mode);
     const notes = flowData.notes[mode]?.[content.id] || [];
+    const noteItems = notes.slice(0, 2);
     const hasThumb = thumbHtml.includes('<img');
 
     // 根据模式显示不同图标
@@ -678,34 +714,36 @@
             ${iconSvg}
           </div>
         </div>
-        <div class="media-card-content">
-          <div class="media-card-meta">
-            <span class="media-card-platform ${platformClass}">${platformText}</span>
-            <span style="font-size: 11px; color: #9ca3af;">稍后阅读</span>
+        <div class="media-card-body">
+          <div class="media-card-content">
+            <div class="media-card-meta">
+              <span class="media-card-platform ${platformClass}">${platformText}</span>
+              <span style="font-size: 11px; color: #9ca3af;">稍后阅读</span>
+            </div>
+            <div class="media-card-title">${escapeHtml(content.title)}</div>
+            ${content.author ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${escapeHtml(content.author)}</div>` : ''}
+            <div class="media-card-note" data-content-id="${content.id}" title="点击编辑备注">${content.note ? escapeHtml(content.note) : '<span class="media-note-placeholder">点击添加备注...</span>'}</div>
           </div>
-          <div class="media-card-title">${escapeHtml(content.title)}</div>
-          ${content.author ? `<div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${escapeHtml(content.author)}</div>` : ''}
-          <div class="media-card-note" data-content-id="${content.id}" title="点击编辑备注">${content.note ? escapeHtml(content.note) : '<span style="color: #9ca3af; font-style: italic;">点击添加备注...</span>'}</div>
-        </div>
-        <div class="media-card-notes" data-content-id="${content.id}">
-          <div class="card-notes-header">
-            <span>笔记 (${notes.length})</span>
-            <button class="card-notes-add" data-content-id="${content.id}">+ 添加</button>
+          <div class="media-card-notes" data-content-id="${content.id}">
+            <div class="card-notes-header">
+              <span>笔记 ${notes.length > 0 ? `(${notes.length})` : ''}</span>
+              <button class="card-notes-add" data-content-id="${content.id}">+ 添加</button>
+            </div>
+            <div class="card-notes-list">
+              ${notes.length > 0 ? noteItems.map(note => `
+                <div class="card-note-item" data-note-id="${note.id}" data-content-id="${content.id}">
+                  <div class="card-note-title">${escapeHtml(note.title)}</div>
+                  <div class="card-note-preview">${escapeHtml(note.preview || '')}</div>
+                </div>
+              `).join('') : '<div class="card-notes-empty">拖入 .md 或点击添加笔记</div>'}
+            </div>
           </div>
-          <div class="card-notes-list">
-            ${notes.length > 0 ? notes.map(note => `
-              <div class="card-note-item" data-note-id="${note.id}" data-content-id="${content.id}">
-                <div class="card-note-title">${escapeHtml(note.title)}</div>
-                <div class="card-note-preview">${escapeHtml(note.preview || '')}</div>
-              </div>
-            `).join('') : '<div class="card-notes-empty">拖拽 .md 文件到此卡片添加笔记</div>'}
-          </div>
-        </div>
-        <div class="media-card-footer">
-          <span>${formatDate(content.createdAt)}</span>
-          <div class="media-card-actions">
-            <button class="media-card-btn pin ${content.pinned ? 'active' : ''}">${content.pinned ? '已置顶' : '置顶'}</button>
-            <button class="media-card-btn delete">删除</button>
+          <div class="media-card-footer">
+            <span>${formatDate(content.createdAt)}</span>
+            <div class="media-card-actions">
+              <button class="media-card-btn pin ${content.pinned ? 'active' : ''}">${content.pinned ? '已置顶' : '置顶'}</button>
+              <button class="media-card-btn delete">删除</button>
+            </div>
           </div>
         </div>
       </div>
@@ -928,6 +966,8 @@
 
   function getStatusLabel(mode, contents) {
     if (searchQuery) return `检索到 ${contents.length} 条结果`;
+    if (currentSort === 'oldest') return '按最早添加排序';
+    if (currentSort === 'pinned') return '置顶内容优先';
     const pinnedCount = contents.filter(content => content.pinned).length;
     if (pinnedCount > 0) {
       return `已置顶 ${pinnedCount} 条`;
@@ -957,6 +997,17 @@
     if (diff < day * 2) return '昨天';
     const days = Math.max(2, Math.round(diff / day));
     return `${days} 天前`;
+  }
+
+  function getSearchPlaceholder(mode) {
+    const placeholderMap = {
+      video: '搜索视频标题、作者、主题或笔记内容...',
+      book: '搜索书名、作者、主题或笔记内容...',
+      paper: '搜索论文标题、作者、关键词或笔记内容...',
+      audio: '搜索播客、作者、主题或笔记内容...',
+      web: '搜索网页标题、站点、主题或笔记内容...'
+    };
+    return placeholderMap[mode] || '搜索内容...';
   }
 
   // 打开内容（新窗口）或下载
