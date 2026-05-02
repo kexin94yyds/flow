@@ -306,7 +306,11 @@
     localStorage.setItem('flowNotes', JSON.stringify(flowData.notes));
     await writeFlowStorage({
       flowItems: items,
-      flowNotes: flowData.notes
+      flowNotes: flowData.notes,
+      flowData: {
+        contents: flowData.contents,
+        notes: flowData.notes
+      }
     });
   }
 
