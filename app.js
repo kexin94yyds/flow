@@ -251,10 +251,6 @@ async function saveTabForLater(tab) {
   await chrome.storage.local.set({ deferred });
 }
 
-function loadFlowItems() {
-  throw new Error('loadFlowItems should be awaited');
-}
-
 function hasExtensionStorage() {
   return typeof chrome !== 'undefined'
     && chrome.storage
@@ -1809,7 +1805,7 @@ document.addEventListener('click', async (e) => {
     if (!tabUrl) return;
 
     const tab = openTabs.find(t => t.url === tabUrl) || { url: tabUrl, title: tabTitle };
-    const result = saveTabToFlow(tab);
+    const result = await saveTabToFlow(tab);
     showToast(result === 'updated' ? 'Updated in Flow' : 'Saved to Flow');
     return;
   }
