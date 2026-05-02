@@ -482,6 +482,7 @@
   // 渲染界面
   function render() {
     const mode = flowData.currentMode;
+    const visibleContents = getVisibleContents(mode);
 
     // 更新模式按钮
     modeBtns.forEach(btn => {
@@ -490,44 +491,63 @@
 
     // 更新标题
     modeTitle.textContent = modeConfig[mode]?.title || '学习空间';
+    if (modeSubtitle) {
+      modeSubtitle.textContent = modeConfig[mode]?.subtitle || '把内容和笔记整理到同一个 Flow 里';
+    }
 
-    // 渲染媒体区
-    renderMedia();
+    // 渲染媒体区和右侧辅助列
+    renderMedia(visibleContents);
+    renderInsights(visibleContents);
   }
 
-  // 渲染媒体卡片网格
-  function renderMedia() {
-    const mode = flowData.currentMode;
-    let contents = flowData.contents[mode] || [];
-
+  function getVisibleContents(mode = flowData.currentMode) {
+    let contents = [...(flowData.contents[mode] || [])];
     // 搜索过滤
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       contents = contents.filter(content => {
         const title = (content.title || '').toLowerCase();
         const note = (content.note || '').toLowerCase();
-        const platform = (content.platform || '').toLowerCase();
+        const platform = (content.platform || getPlatformText(content.url, mode) || '').toLowerCase();
         return title.includes(query) || note.includes(query) || platform.includes(query);
       });
     }
-    
+
     // 排序：置顶的在前，然后按创建时间降序
     contents.sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (!a.pinned && b.pinned) return 1;
-      return (b.createdAt || 0) - (a.createdAt || 0);
+      return getTimestamp(b.createdAt) - getTimestamp(a.createdAt);
     });
+
+    return contents;
+  }
+
+  // 渲染媒体卡片网格
+  function renderMedia(contents) {
+    const mode = flowData.currentMode;
 
     // 更新标题
     const titleMap = {
       video: '视频列表',
       book: '书籍列表',
-      paper: '论文列表'
+      paper: '论文列表',
+      audio: '音频列表',
+      web: '网页收藏'
     };
     mediaTitle.textContent = titleMap[mode] || '内容列表';
+    if (mediaCount) {
+      mediaCount.textContent = String(contents.length);
+    }
+    if (mediaStatus) {
+      mediaStatus.textContent = getStatusLabel(mode, contents);
+    }
 
     if (contents.length === 0) {
       renderMediaPlaceholder(searchQuery ? '未找到匹配内容' : null);
+      if (contentTail) {
+        contentTail.textContent = searchQuery ? '换个关键词试试' : '从右上角开始，把第一条内容放进来';
+      }
       return;
     }
 
@@ -576,6 +596,13 @@
         handleCardFileDrop(e.dataTransfer.files, id);
       });
     });
+
+    if (contentTail) {
+      const pinnedCount = contents.filter(content => content.pinned).length;
+      contentTail.textContent = pinnedCount > 0
+        ? `已整理 ${contents.length} 条内容，其中 ${pinnedCount} 条已置顶`
+        : `已整理 ${contents.length} 条内容`;
+    }
   }
 
   // 打开笔记文件选择器
