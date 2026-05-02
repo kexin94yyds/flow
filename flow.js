@@ -27,9 +27,20 @@
   // DOM 元素
   const modeBtns = document.querySelectorAll('.mode-btn[data-mode]');
   const modeTitle = document.getElementById('modeTitle');
+  const modeSubtitle = document.getElementById('modeSubtitle');
   const mediaSection = document.getElementById('mediaSection');
   const mediaTitle = document.getElementById('mediaTitle');
   const mediaGrid = document.getElementById('mediaGrid');
+  const mediaCount = document.getElementById('mediaCount');
+  const mediaStatus = document.getElementById('mediaStatus');
+  const contentTail = document.getElementById('contentTail');
+  const recentList = document.getElementById('recentList');
+  const tagCloud = document.getElementById('tagCloud');
+  const tagSummary = document.getElementById('tagSummary');
+  const progressGrid = document.getElementById('progressGrid');
+  const progressSummary = document.getElementById('progressSummary');
+  const progressBarFill = document.getElementById('progressBarFill');
+  const quickActions = document.getElementById('quickActions');
 
   // 弹窗元素
   const noteModal = document.getElementById('noteModal');
@@ -53,12 +64,12 @@
 
   // 模式配置
   const modeConfig = {
-    video: { title: '视频学习', icon: 'video' },
-    book: { title: '书籍阅读', icon: 'book' },
-    paper: { title: '论文研读', icon: 'paper' },
-    audio: { title: '音频播客', icon: 'audio' },
-    web: { title: '网页收藏', icon: 'web' },
-    settings: { title: '设置', icon: 'settings' }
+    video: { title: '视频学习', icon: 'video', subtitle: '沉淀有价值的视频内容，构建你的知识体系' },
+    book: { title: '书籍阅读', icon: 'book', subtitle: '收纳正在读的书，把重点和笔记留在同一处' },
+    paper: { title: '论文研读', icon: 'paper', subtitle: '把论文、摘要和思考整理成连续的研究流' },
+    audio: { title: '音频播客', icon: 'audio', subtitle: '收藏值得反复听的声音内容，提取可复用的观点' },
+    web: { title: '网页收藏', icon: 'web', subtitle: '收好网页、文章和链接，把碎片变成线索' },
+    settings: { title: '设置', icon: 'settings', subtitle: '管理你的 Flow 配置与数据' }
   };
 
   // 初始化
