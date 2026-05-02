@@ -66,6 +66,33 @@
   let currentSort = 'newest';
   let currentView = 'grid';
 
+  function hasExtensionStorage() {
+    return typeof chrome !== 'undefined'
+      && chrome.storage
+      && chrome.storage.local
+      && typeof chrome.storage.local.get === 'function'
+      && typeof chrome.storage.local.set === 'function';
+  }
+
+  async function readFlowStorage() {
+    if (!hasExtensionStorage()) return {};
+    try {
+      return await chrome.storage.local.get(['flowItems', 'flowData', 'flowNotes']);
+    } catch (err) {
+      console.warn('读取 chrome.storage.local 失败', err);
+      return {};
+    }
+  }
+
+  async function writeFlowStorage(payload) {
+    if (!hasExtensionStorage()) return;
+    try {
+      await chrome.storage.local.set(payload);
+    } catch (err) {
+      console.warn('写入 chrome.storage.local 失败', err);
+    }
+  }
+
   // 模式配置
   const modeConfig = {
     video: { title: '视频学习', icon: 'video', subtitle: '沉淀有价值的视频内容，构建你的知识体系' },
@@ -106,24 +133,43 @@
     } else {
       await loadFromLocalStorage();
     }
-    
-    // 加载笔记（笔记单独存储）
-    const savedNotes = localStorage.getItem('flowNotes');
-    if (savedNotes) {
-      try {
-        flowData.notes = JSON.parse(savedNotes);
-      } catch (e) {}
-    }
   }
   
   // 从 localStorage 加载
   async function loadFromLocalStorage() {
+    const browserStorage = await readFlowStorage();
+
+    if (Array.isArray(browserStorage.flowItems) && browserStorage.flowItems.length > 0) {
+      items = browserStorage.flowItems;
+      await itemsToFlowData();
+      if (browserStorage.flowNotes && typeof browserStorage.flowNotes === 'object') {
+        flowData.notes = browserStorage.flowNotes;
+      }
+      return;
+    }
+
+    if (browserStorage.flowData) {
+      try {
+        const oldData = browserStorage.flowData;
+        flowData.contents = oldData.contents || { video: [], book: [], paper: [], audio: [], web: [] };
+        flowData.notes = browserStorage.flowNotes || oldData.notes || { video: {}, book: {}, paper: {}, audio: {}, web: {} };
+        flowDataToItems();
+        return;
+      } catch (e) {
+        console.error('加载 chrome.storage.local 数据失败', e);
+      }
+    }
+
     // 先尝试加载新格式 items
     const savedItems = localStorage.getItem('flowItems');
     if (savedItems) {
       try {
         items = JSON.parse(savedItems);
         await itemsToFlowData();
+        const savedNotes = localStorage.getItem('flowNotes');
+        if (savedNotes) {
+          flowData.notes = JSON.parse(savedNotes);
+        }
         return;
       } catch (e) {}
     }
@@ -134,7 +180,7 @@
       try {
         const oldData = JSON.parse(saved);
         flowData.contents = oldData.contents || { video: [], book: [], paper: [], audio: [] };
-        flowData.notes = oldData.notes || { video: {}, book: {}, paper: {}, audio: {} };
+        flowData.notes = oldData.notes || { video: {}, book: {}, paper: {}, audio: {}, web: {} };
         // 将旧数据转换为 items 格式
         flowDataToItems();
       } catch (e) {
@@ -258,6 +304,10 @@
     
     // 笔记单独保存
     localStorage.setItem('flowNotes', JSON.stringify(flowData.notes));
+    await writeFlowStorage({
+      flowItems: items,
+      flowNotes: flowData.notes
+    });
   }
 
   // 更新 URL 模式
