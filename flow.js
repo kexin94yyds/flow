@@ -66,33 +66,6 @@
   let currentSort = 'newest';
   let currentView = 'grid';
 
-  function hasExtensionStorage() {
-    return typeof chrome !== 'undefined'
-      && chrome.storage
-      && chrome.storage.local
-      && typeof chrome.storage.local.get === 'function'
-      && typeof chrome.storage.local.set === 'function';
-  }
-
-  async function readFlowStorage() {
-    if (!hasExtensionStorage()) return {};
-    try {
-      return await chrome.storage.local.get(['flowItems', 'flowData', 'flowNotes']);
-    } catch (err) {
-      console.warn('读取 chrome.storage.local 失败', err);
-      return {};
-    }
-  }
-
-  async function writeFlowStorage(payload) {
-    if (!hasExtensionStorage()) return;
-    try {
-      await chrome.storage.local.set(payload);
-    } catch (err) {
-      console.warn('写入 chrome.storage.local 失败', err);
-    }
-  }
-
   // 模式配置
   const modeConfig = {
     video: { title: '视频学习', icon: 'video', subtitle: '沉淀有价值的视频内容，构建你的知识体系' },
@@ -137,7 +110,9 @@
   
   // 从 localStorage 加载
   async function loadFromLocalStorage() {
-    const browserStorage = await readFlowStorage();
+    const browserStorage = window.FlowStorage?.loadFlowBundle
+      ? await window.FlowStorage.loadFlowBundle()
+      : {};
 
     if (Array.isArray(browserStorage.flowItems) && browserStorage.flowItems.length > 0) {
       items = browserStorage.flowItems;
@@ -304,14 +279,16 @@
     
     // 笔记单独保存
     localStorage.setItem('flowNotes', JSON.stringify(flowData.notes));
-    await writeFlowStorage({
-      flowItems: items,
-      flowNotes: flowData.notes,
-      flowData: {
-        contents: flowData.contents,
-        notes: flowData.notes
-      }
-    });
+    if (window.FlowStorage?.saveFlowBundle) {
+      await window.FlowStorage.saveFlowBundle({
+        flowItems: items,
+        flowNotes: flowData.notes,
+        flowData: {
+          contents: flowData.contents,
+          notes: flowData.notes
+        }
+      });
+    }
   }
 
   // 更新 URL 模式
