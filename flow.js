@@ -786,6 +786,179 @@
     `;
   }
 
+  function renderInsights(contents) {
+    renderRecentList(contents);
+    renderTagCloud(contents);
+    renderProgress(contents);
+    renderQuickActions();
+  }
+
+  function renderRecentList(contents) {
+    if (!recentList) return;
+
+    if (contents.length === 0) {
+      recentList.innerHTML = '<div class="progress-subtext">还没有收藏内容</div>';
+      return;
+    }
+
+    recentList.innerHTML = contents.slice(0, 3).map(content => `
+      <div class="recent-item">
+        <div class="recent-thumb">${getMiniThumbHtml(content, flowData.currentMode)}</div>
+        <div>
+          <div class="recent-item-title">${escapeHtml(content.title || '未命名内容')}</div>
+          <div class="recent-item-meta">${escapeHtml(getPlatformText(content.url, flowData.currentMode))} · ${escapeHtml(formatRelativeDate(content.createdAt))}</div>
+        </div>
+        <span class="bookmark-mark">${content.pinned ? '★' : '⌁'}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderTagCloud(contents) {
+    if (!tagCloud || !tagSummary) return;
+
+    const chips = [];
+    const mode = flowData.currentMode;
+    const notesCount = contents.filter(content => (content.note || '').trim()).length;
+    const pinnedCount = contents.filter(content => content.pinned).length;
+    const sourceBuckets = new Map();
+
+    contents.forEach(content => {
+      const label = getPlatformText(content.url, mode);
+      sourceBuckets.set(label, (sourceBuckets.get(label) || 0) + 1);
+    });
+
+    chips.push({ label: modeConfig[mode]?.title || '当前模式', count: contents.length });
+    if (pinnedCount > 0) chips.push({ label: '置顶', count: pinnedCount });
+    if (notesCount > 0) chips.push({ label: '有备注', count: notesCount });
+
+    Array.from(sourceBuckets.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .forEach(([label, count]) => chips.push({ label, count }));
+
+    tagSummary.textContent = `${contents.length} 条内容`;
+    tagCloud.innerHTML = chips.map(chip => `
+      <span class="tag-chip">
+        <span>${escapeHtml(chip.label)}</span>
+        <span class="tag-chip-count">${chip.count}</span>
+      </span>
+    `).join('');
+  }
+
+  function renderProgress(contents) {
+    if (!progressGrid || !progressSummary || !progressBarFill) return;
+
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+    const totalNotes = contents.reduce((sum, content) => {
+      const notes = flowData.notes[flowData.currentMode]?.[content.id] || [];
+      return sum + notes.length;
+    }, 0);
+    const thisWeekCount = contents.filter(content => getTimestamp(content.createdAt) >= sevenDaysAgo).length;
+    const pinnedCount = contents.filter(content => content.pinned).length;
+    const focusScore = contents.length
+      ? Math.min(100, Math.round(((pinnedCount * 2) + totalNotes + thisWeekCount) / Math.max(contents.length, 1) * 20))
+      : 0;
+
+    progressGrid.innerHTML = [
+      { label: '内容总量', value: contents.length, subtext: '当前模式' },
+      { label: '新增条目', value: thisWeekCount, subtext: '最近 7 天' }
+    ].map(metric => `
+      <div class="progress-metric">
+        <div class="progress-label">${metric.label}</div>
+        <div class="progress-value">${metric.value}</div>
+        <div class="progress-subtext">${metric.subtext}</div>
+      </div>
+    `).join('');
+
+    progressSummary.textContent = totalNotes > 0
+      ? `累计写下 ${totalNotes} 条笔记，当前置顶 ${pinnedCount} 条`
+      : pinnedCount > 0
+        ? `当前置顶 ${pinnedCount} 条，建议继续补充笔记`
+        : '先收藏几条高质量内容，再慢慢整理';
+    progressBarFill.style.width = `${focusScore}%`;
+  }
+
+  function renderQuickActions() {
+    if (!quickActions) return;
+
+    quickActions.innerHTML = [
+      { action: 'focus-search', title: '搜索内容', desc: '立即定位卡片' },
+      { action: 'add-content', title: '添加内容', desc: '继续往 Flow 里收' },
+      { action: 'clear-search', title: '清空筛选', desc: '回到完整列表' },
+      { action: 'open-dashboard', title: '返回 Tab Out', desc: '切回主面板' }
+    ].map(item => `
+      <button class="quick-action-btn" data-action="${item.action}">
+        <strong>${item.title}</strong>
+        <span>${item.desc}</span>
+      </button>
+    `).join('');
+
+    quickActions.querySelectorAll('.quick-action-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        if (action === 'focus-search') {
+          document.getElementById('searchInput')?.focus();
+        } else if (action === 'add-content') {
+          openContentModal();
+        } else if (action === 'clear-search') {
+          clearSearch();
+        } else if (action === 'open-dashboard') {
+          window.location.href = 'index.html';
+        }
+      });
+    });
+  }
+
+  function getMiniThumbHtml(content, mode) {
+    if (content.image) {
+      return `<img src="${content.image}" alt="">`;
+    }
+
+    const labelMap = {
+      video: '视频',
+      book: '书籍',
+      paper: '论文',
+      audio: '音频',
+      web: '网页'
+    };
+
+    return `<span>${labelMap[mode] || '内容'}</span>`;
+  }
+
+  function getStatusLabel(mode, contents) {
+    if (searchQuery) return `检索到 ${contents.length} 条结果`;
+    const pinnedCount = contents.filter(content => content.pinned).length;
+    if (pinnedCount > 0) {
+      return `已置顶 ${pinnedCount} 条`;
+    }
+    const labelMap = {
+      video: '沉浸式整理中',
+      book: '阅读轨道已就绪',
+      paper: '研究线索整理中',
+      audio: '声音清单持续生长',
+      web: '碎片线索正在收束'
+    };
+    return labelMap[mode] || 'Flow 已就绪';
+  }
+
+  function getTimestamp(value) {
+    if (!value) return 0;
+    const timestamp = typeof value === 'number' ? value : Date.parse(value);
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  function formatRelativeDate(value) {
+    const timestamp = getTimestamp(value);
+    if (!timestamp) return '刚刚';
+    const diff = Date.now() - timestamp;
+    const day = 24 * 60 * 60 * 1000;
+    if (diff < day) return '今天';
+    if (diff < day * 2) return '昨天';
+    const days = Math.max(2, Math.round(diff / day));
+    return `${days} 天前`;
+  }
+
   // 打开内容（新窗口）或下载
   async function openContent(id) {
     const mode = flowData.currentMode;
