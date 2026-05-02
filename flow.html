@@ -1177,6 +1177,7 @@
 
     .media-card-thumb {
       border-bottom: 1px solid rgba(141, 111, 84, 0.06);
+      aspect-ratio: 16 / 9.4;
     }
 
     .media-card-content {
@@ -1204,13 +1205,16 @@
 
     .media-card-note {
       margin-top: 6px;
-      padding: 10px 12px;
+      padding: 9px 12px;
+      min-height: 40px;
       background: #fbf7f2;
       border-radius: 12px;
       border: 1px solid rgba(141, 111, 84, 0.08);
       color: #8a7a6f;
       font-size: 13px;
       line-height: 1.45;
+      display: flex;
+      align-items: center;
     }
 
     .media-note-placeholder {
@@ -1219,7 +1223,7 @@
     }
 
     .media-card-notes {
-      padding: 0 16px 12px;
+      padding: 2px 16px 10px;
       background: transparent;
     }
 
@@ -1228,7 +1232,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       color: #8c7d71;
       font-size: 12px;
     }
@@ -1277,7 +1281,7 @@
     }
 
     .card-notes-empty {
-      padding: 10px 12px;
+      padding: 8px 12px;
       border: 1px dashed rgba(141, 111, 84, 0.12);
       color: #a09184;
       font-size: 12px;
@@ -1286,7 +1290,7 @@
 
     .media-card-footer {
       padding: 10px 16px 14px;
-      background: transparent;
+      background: rgba(255, 253, 249, 0.72);
       border-top: 1px solid rgba(141, 111, 84, 0.08);
       color: #938579;
     }
