@@ -925,10 +925,10 @@
 
     .header {
       display: grid;
-      grid-template-columns: minmax(240px, 360px) minmax(320px, 1fr) auto;
-      gap: 28px;
+      grid-template-columns: minmax(240px, 400px) minmax(360px, 1fr) auto;
+      gap: 32px;
       align-items: start;
-      padding: 28px 32px 18px;
+      padding: 34px 32px 18px;
       border-bottom: none;
       background: transparent;
       -webkit-app-region: no-drag;
@@ -944,8 +944,8 @@
     .header h1 {
       margin: 0;
       font-family: "Newsreader", Georgia, serif;
-      font-size: 34px;
-      line-height: 1;
+      font-size: 54px;
+      line-height: 0.96;
       font-weight: 500;
       letter-spacing: -0.04em;
       color: #3d2a1d;
@@ -953,17 +953,18 @@
 
     .mode-subtitle {
       margin: 0;
-      font-size: 14px;
+      font-size: 15px;
       line-height: 1.5;
       color: #74665a;
+      max-width: 28ch;
     }
 
     .search-box {
       align-self: center;
       width: 100%;
-      max-width: none;
-      margin: 16px 0 0;
-      padding: 12px 16px;
+      max-width: 520px;
+      margin: 10px auto 0;
+      padding: 14px 18px;
       border-radius: 16px;
       border: 1px solid rgba(141, 111, 84, 0.14);
       background: rgba(255, 255, 255, 0.74);
@@ -990,7 +991,7 @@
 
     .header-btn,
     .pin-btn {
-      min-height: 44px;
+      min-height: 46px;
       border-radius: 14px;
       border: 1px solid rgba(141, 111, 84, 0.14);
       background: rgba(255, 255, 255, 0.82);
@@ -1070,7 +1071,7 @@
 
     .media-title {
       font-family: "Newsreader", Georgia, serif;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 500;
       color: #433126;
     }
@@ -1081,9 +1082,75 @@
       color: #8b7d71;
     }
 
+    .media-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .media-sort {
+      position: relative;
+    }
+
+    .media-sort-select {
+      min-height: 34px;
+      padding: 0 34px 0 12px;
+      border-radius: 11px;
+      border: 1px solid rgba(141, 111, 84, 0.12);
+      background: #fffdf9;
+      color: #6f5d50;
+      font-size: 13px;
+      appearance: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .media-sort::after {
+      content: "⌄";
+      position: absolute;
+      top: 50%;
+      right: 12px;
+      transform: translateY(-55%);
+      color: #a18f82;
+      pointer-events: none;
+      font-size: 12px;
+    }
+
+    .view-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .view-toggle-btn {
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(141, 111, 84, 0.12);
+      border-radius: 10px;
+      background: #fffdf9;
+      color: #8d7769;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .view-toggle-btn.active {
+      color: #9a5d30;
+      border-color: rgba(183, 120, 67, 0.24);
+      background: rgba(255, 249, 242, 0.98);
+    }
+
     .media-grid {
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 20px;
+    }
+
+    .media-grid.list-view {
+      grid-template-columns: 1fr;
     }
 
     .media-card {
@@ -1109,12 +1176,12 @@
     }
 
     .media-card-content {
-      padding: 14px 16px 12px;
+      padding: 14px 16px 10px;
       gap: 8px;
     }
 
     .media-card-meta {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .media-card-platform {
@@ -1126,21 +1193,55 @@
 
     .media-card-title {
       font-size: 15px;
-      line-height: 1.5;
+      line-height: 1.45;
       color: #2f261f;
+      min-height: 44px;
     }
 
     .media-card-note {
-      margin-top: 10px;
+      margin-top: 6px;
       padding: 10px 12px;
-      background: #faf6f0;
+      background: #fbf7f2;
       border-radius: 12px;
+      border: 1px solid rgba(141, 111, 84, 0.08);
       color: #8a7a6f;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .media-note-placeholder {
+      color: #aca095;
+      font-style: italic;
     }
 
     .media-card-notes {
-      padding: 12px 16px;
-      background: rgba(249, 244, 237, 0.8);
+      padding: 0 16px 12px;
+      background: transparent;
+    }
+
+    .card-notes-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      color: #8c7d71;
+      font-size: 12px;
+    }
+
+    .card-notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-notes-add {
+      border: none;
+      background: transparent;
+      color: #a26439;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
     }
 
     .card-note-item,
@@ -1148,8 +1249,39 @@
       border-radius: 12px;
     }
 
+    .card-note-item {
+      padding: 10px 12px;
+      background: rgba(251, 247, 242, 0.92);
+      border: 1px solid rgba(141, 111, 84, 0.08);
+    }
+
+    .card-note-title {
+      font-size: 12px;
+      color: #4e3c31;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .card-note-preview {
+      font-size: 12px;
+      color: #8c7d71;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-notes-empty {
+      padding: 10px 12px;
+      border: 1px dashed rgba(141, 111, 84, 0.12);
+      color: #a09184;
+      font-size: 12px;
+      background: rgba(255, 253, 249, 0.9);
+    }
+
     .media-card-footer {
-      padding: 12px 16px 14px;
+      padding: 10px 16px 14px;
       background: transparent;
       border-top: 1px solid rgba(141, 111, 84, 0.08);
       color: #938579;
@@ -1354,6 +1486,23 @@
       font-weight: 600;
     }
 
+    .media-grid.list-view .media-card {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      align-items: stretch;
+    }
+
+    .media-grid.list-view .media-card-thumb {
+      border-bottom: none;
+      border-right: 1px solid rgba(141, 111, 84, 0.06);
+      min-height: 100%;
+    }
+
+    .media-grid.list-view .media-card-body {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+    }
+
     .content-tail {
       text-align: center;
       font-size: 12px;
@@ -1364,6 +1513,10 @@
     @media (max-width: 1200px) {
       .flow-shell {
         grid-template-columns: minmax(0, 1fr);
+      }
+
+      .media-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .insights-column {
@@ -1379,12 +1532,25 @@
         gap: 18px;
       }
 
+      .header h1 {
+        font-size: 42px;
+      }
+
       .search-box {
         margin-top: 0;
       }
 
       .header-actions {
         justify-content: flex-start;
+      }
+
+      .media-grid,
+      .media-grid.list-view {
+        grid-template-columns: 1fr;
+      }
+
+      .media-grid.list-view .media-card {
+        display: block;
       }
 
       .insights-column {
@@ -1487,7 +1653,34 @@
                   <span class="media-title" id="mediaTitle">视频列表</span>
                   <span class="media-count" id="mediaCount">0</span>
                 </div>
-                <span class="media-status" id="mediaStatus">沉浸式整理中</span>
+                <div class="media-toolbar">
+                  <span class="media-status" id="mediaStatus">沉浸式整理中</span>
+                  <label class="media-sort">
+                    <select id="sortSelect" class="media-sort-select" aria-label="排序方式">
+                      <option value="newest">最新添加</option>
+                      <option value="oldest">最早添加</option>
+                      <option value="pinned">优先置顶</option>
+                    </select>
+                  </label>
+                  <div class="view-toggle" role="group" aria-label="卡片视图">
+                    <button class="view-toggle-btn active" data-view="grid" aria-label="网格视图">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="4" y="4" width="6" height="6" rx="1"></rect>
+                        <rect x="14" y="4" width="6" height="6" rx="1"></rect>
+                        <rect x="4" y="14" width="6" height="6" rx="1"></rect>
+                        <rect x="14" y="14" width="6" height="6" rx="1"></rect>
+                      </svg>
+                    </button>
+                    <button class="view-toggle-btn" data-view="list" aria-label="列表视图">
+                      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6h12M8 12h12M8 18h12"></path>
+                        <circle cx="4" cy="6" r="1"></circle>
+                        <circle cx="4" cy="12" r="1"></circle>
+                        <circle cx="4" cy="18" r="1"></circle>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="media-grid" id="mediaGrid">
                 <!-- 卡片网格 -->
