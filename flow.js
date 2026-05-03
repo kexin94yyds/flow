@@ -610,7 +610,7 @@
     }
 
     if (contents.length === 0) {
-      renderMediaPlaceholder();
+      renderTabOutBoard();
       if (contentTail) {
         contentTail.textContent = '';
       }
@@ -822,6 +822,132 @@
     mediaGrid.innerHTML = `
       <div class="media-placeholder" aria-hidden="true"></div>
     `;
+  }
+
+  async function renderTabOutBoard() {
+    if (!mediaGrid) return;
+
+    renderMediaPlaceholder();
+
+    const { openTabs, deferredTabs } = await loadTabOutBoardData();
+    if (openTabs.length === 0 && deferredTabs.length === 0) {
+      return;
+    }
+
+    const openSection = renderTabOutBoardSection('Open tabs', `${openTabs.length} tabs`, openTabs.slice(0, 9), '打开标签');
+    const savedSection = renderTabOutBoardSection('Saved for later', `${deferredTabs.length} items`, deferredTabs.slice(0, 6), '稍后保存');
+
+    mediaGrid.innerHTML = `
+      <div class="tabout-board">
+        ${openSection}
+        ${savedSection}
+      </div>
+    `;
+  }
+
+  function renderTabOutBoardSection(title, countText, cards, label) {
+    if (!cards.length) return '';
+
+    return `
+      <section class="tabout-board-section">
+        <div class="tabout-board-heading">
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(countText)}</span>
+        </div>
+        <div class="tabout-project-grid">
+          ${cards.map(card => renderTabOutProjectCard(card, label)).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderTabOutProjectCard(card, label) {
+    const url = card.url || '#';
+    const title = card.title || card.url || 'Untitled';
+    const domain = getBoardDomain(url) || 'Tab Out';
+    const favicon = card.faviconUrl || getBoardFavicon(url);
+
+    return `
+      <a class="tabout-project-card" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="${escapeHtml(title)}">
+        <div class="tabout-project-thumb">
+          ${favicon ? `<img src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
+        </div>
+        <div class="tabout-project-body">
+          <div class="tabout-project-domain">${escapeHtml(domain)}</div>
+          <div class="tabout-project-title">${escapeHtml(title)}</div>
+          <div class="tabout-project-pill">${escapeHtml(label)}</div>
+          <div class="tabout-project-url">${escapeHtml(url)}</div>
+        </div>
+      </a>
+    `;
+  }
+
+  async function loadTabOutBoardData() {
+    const [openTabs, deferredTabs] = await Promise.all([
+      loadTabOutOpenTabs(),
+      loadTabOutDeferredTabs()
+    ]);
+
+    return { openTabs, deferredTabs };
+  }
+
+  async function loadTabOutOpenTabs() {
+    if (typeof chrome === 'undefined' || !chrome.tabs?.query) return [];
+
+    try {
+      const extensionUrl = chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/` : '';
+      const tabs = await chrome.tabs.query({});
+      return tabs
+        .filter(tab => isBoardUrl(tab.url, extensionUrl))
+        .map(tab => ({
+          url: tab.url,
+          title: tab.title || tab.url || 'Untitled',
+          faviconUrl: tab.favIconUrl || getBoardFavicon(tab.url)
+        }));
+    } catch (err) {
+      console.warn('[flow] Could not load Tab Out open tabs:', err);
+      return [];
+    }
+  }
+
+  async function loadTabOutDeferredTabs() {
+    try {
+      const stored = window.FlowStorage?.getMany
+        ? await window.FlowStorage.getMany(['deferred'])
+        : {};
+      const deferred = Array.isArray(stored.deferred) ? stored.deferred : [];
+
+      return deferred
+        .filter(item => !item.dismissed)
+        .sort((a, b) => getTimestamp(b.savedAt || b.completedAt) - getTimestamp(a.savedAt || a.completedAt))
+        .map(item => ({
+          url: item.url,
+          title: item.title || item.url || 'Untitled',
+          faviconUrl: getBoardFavicon(item.url)
+        }));
+    } catch (err) {
+      console.warn('[flow] Could not load Tab Out saved tabs:', err);
+      return [];
+    }
+  }
+
+  function isBoardUrl(url, extensionUrl) {
+    if (!url) return false;
+    if (extensionUrl && url.startsWith(extensionUrl)) return false;
+    return !/^(chrome|chrome-extension|edge|about):/i.test(url);
+  }
+
+  function getBoardDomain(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  }
+
+  function getBoardFavicon(url) {
+    const domain = getBoardDomain(url);
+    return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32` : '';
   }
 
   function renderInsights(contents) {
