@@ -929,9 +929,9 @@
           <strong>Saved for later</strong>
           <span>${escapeHtml(`${activeSavedTabs.length} items`)}</span>
         </div>
-        <div class="history-saved-list">
+        <div class="tabout-project-grid">
           ${activeSavedTabs.length
-            ? activeSavedTabs.map(item => renderSavedTabRow(item)).join('')
+            ? activeSavedTabs.map(item => renderSavedTabCard(item)).join('')
             : `<div class="history-empty-copy">${searchQuery ? '没有匹配的稍后保存项目' : '还没有 active 的稍后保存项目'}</div>`}
         </div>
         <section class="history-archive-panel">
@@ -947,9 +947,9 @@
                 value="${escapeHtml(historyArchiveQuery)}"
                 placeholder="搜索归档标题或链接..."
               >
-              <div class="history-archive-list">
+              <div class="tabout-project-grid history-archive-grid">
                 ${archiveItems.length
-                  ? archiveItems.map(item => renderArchiveTabRow(item)).join('')
+                  ? archiveItems.map(item => renderSavedTabCard(item, true)).join('')
                   : `<div class="history-empty-copy">${historyArchiveQuery ? '没有匹配的归档项目' : '还没有归档项目'}</div>`}
               </div>
             </div>
@@ -993,30 +993,41 @@
     `;
   }
 
-  function renderSavedTabRow(item) {
+  function renderSavedTabCard(item, archived = false) {
     const domain = getBoardDomain(item.url) || 'Tab Out';
     const title = item.title || item.url || 'Untitled';
+    const favicon = item.faviconUrl || getBoardFavicon(item.url);
+    const badge = archived ? '已归档' : '稍后保存';
+    const primaryAction = archived
+      ? `<button class="tabout-action-btn primary" data-history-action="open-saved-tab" data-tab-url="${escapeHtml(item.url)}">打开</button>`
+      : `<button class="tabout-action-btn primary" data-history-action="open-saved-tab" data-tab-url="${escapeHtml(item.url)}">打开</button>`;
+    const secondaryAction = archived
+      ? ''
+      : `<button class="tabout-action-btn" data-history-action="complete-saved-tab" data-saved-id="${item.id}">完成</button>`;
+    const removeAction = archived
+      ? ''
+      : `<button class="tabout-action-btn danger" data-history-action="dismiss-saved-tab" data-saved-id="${item.id}">移除</button>`;
 
     return `
-      <div class="history-saved-row">
-        <button class="history-check-btn" data-history-action="complete-saved-tab" data-saved-id="${item.id}" title="标记完成">✓</button>
-        <div class="history-saved-main">
-          <a class="history-saved-title" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(title)}</a>
-          <div class="history-saved-meta">${escapeHtml(domain)} · 保存于 ${escapeHtml(formatRelativeDate(item.savedAt))}</div>
+      <article class="tabout-project-card">
+        <button class="tabout-project-thumb tabout-card-pressable" data-history-action="open-saved-tab" data-tab-url="${escapeHtml(item.url)}" title="打开链接">
+          ${item.previewImageUrl ? `<img class="tabout-project-preview" src="${escapeHtml(item.previewImageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
+          ${!item.previewImageUrl && favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
+        </button>
+        <div class="tabout-project-body">
+          <div class="tabout-project-domain-row">
+            <div class="tabout-project-domain">${escapeHtml(domain)}</div>
+            <div class="tabout-project-pill">${badge}</div>
+          </div>
+          <button class="tabout-project-title tabout-card-pressable text" data-history-action="open-saved-tab" data-tab-url="${escapeHtml(item.url)}" title="${escapeHtml(title)}">${escapeHtml(title)}</button>
+          <div class="tabout-project-url">${escapeHtml(item.url)}</div>
+          <div class="tabout-project-actions">
+            ${primaryAction}
+            ${secondaryAction}
+            ${removeAction}
+          </div>
         </div>
-        <button class="history-dismiss-btn" data-history-action="dismiss-saved-tab" data-saved-id="${item.id}" title="移除">×</button>
-      </div>
-    `;
-  }
-
-  function renderArchiveTabRow(item) {
-    const title = item.title || item.url || 'Untitled';
-    const stamp = item.completedAt || item.savedAt;
-    return `
-      <a class="history-archive-item" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">
-        <span class="history-archive-item-title">${escapeHtml(title)}</span>
-        <span class="history-archive-item-date">${escapeHtml(formatRelativeDate(stamp))}</span>
-      </a>
+      </article>
     `;
   }
 
