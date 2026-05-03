@@ -964,19 +964,24 @@
     const title = card.title || card.url || 'Untitled';
     const domain = getBoardDomain(url) || 'Tab Out';
     const favicon = card.faviconUrl || getBoardFavicon(url);
-    const duplicatePill = card.duplicateCount > 1
-      ? `<div class="tabout-project-pill warn">${card.duplicateCount} 个重复</div>`
-      : `<div class="tabout-project-pill">打开标签</div>`;
+    const description = card.previewDescription || domain;
+    const duplicateBadge = card.duplicateCount > 1
+      ? `<span class="tabout-project-dupe">${card.duplicateCount}x</span>`
+      : '';
 
     return `
       <article class="tabout-project-card" data-tab-url="${escapeHtml(url)}">
         <button class="tabout-project-thumb tabout-card-pressable" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="切换到此标签">
-          ${favicon ? `<img src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
+          ${card.previewImageUrl ? `<img class="tabout-project-preview" src="${escapeHtml(card.previewImageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
+          ${favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
         </button>
         <div class="tabout-project-body">
-          <div class="tabout-project-domain">${escapeHtml(domain)}</div>
+          <div class="tabout-project-domain-row">
+            <div class="tabout-project-domain">${escapeHtml(domain)}</div>
+            ${duplicateBadge}
+          </div>
           <button class="tabout-project-title tabout-card-pressable text" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="${escapeHtml(title)}">${escapeHtml(title)}</button>
-          ${duplicatePill}
+          <div class="tabout-project-description">${escapeHtml(description)}</div>
           <div class="tabout-project-url">${escapeHtml(url)}</div>
           <div class="tabout-project-actions">
             <button class="tabout-action-btn primary" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}">打开</button>
