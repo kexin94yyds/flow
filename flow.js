@@ -20,8 +20,8 @@
   let flowData = {
     currentMode: 'video',
     currentContentId: null,
-    contents: { video: [], book: [], paper: [], audio: [], web: [] },
-    notes: { video: {}, book: {}, paper: {}, audio: {}, web: {} }
+    contents: { video: [], book: [], paper: [], audio: [], web: [], history: [] },
+    notes: { video: {}, book: {}, paper: {}, audio: {}, web: {}, history: {} }
   };
 
   // DOM 元素
@@ -73,6 +73,7 @@
     paper: { title: '论文研读', icon: 'paper', subtitle: '把论文、摘要和思考整理成连续的研究流' },
     audio: { title: '音频播客', icon: 'audio', subtitle: '收藏值得反复听的声音内容，提取可复用的观点' },
     web: { title: '网页收藏', icon: 'web', subtitle: '收好网页、文章和链接，把碎片变成线索' },
+    history: { title: '历史项目', icon: 'history', subtitle: '把 Tab Out 的打开标签和稍后保存项目集中回看' },
     settings: { title: '设置', icon: 'settings', subtitle: '管理你的 Flow 配置与数据' }
   };
 
@@ -126,8 +127,8 @@
     if (browserStorage.flowData) {
       try {
         const oldData = browserStorage.flowData;
-        flowData.contents = oldData.contents || { video: [], book: [], paper: [], audio: [], web: [] };
-        flowData.notes = browserStorage.flowNotes || oldData.notes || { video: {}, book: {}, paper: {}, audio: {}, web: {} };
+        flowData.contents = oldData.contents || { video: [], book: [], paper: [], audio: [], web: [], history: [] };
+        flowData.notes = browserStorage.flowNotes || oldData.notes || { video: {}, book: {}, paper: {}, audio: {}, web: {}, history: {} };
         flowDataToItems();
         return;
       } catch (e) {
@@ -154,8 +155,8 @@
     if (saved) {
       try {
         const oldData = JSON.parse(saved);
-        flowData.contents = oldData.contents || { video: [], book: [], paper: [], audio: [] };
-        flowData.notes = oldData.notes || { video: {}, book: {}, paper: {}, audio: {}, web: {} };
+        flowData.contents = oldData.contents || { video: [], book: [], paper: [], audio: [], web: [], history: [] };
+        flowData.notes = oldData.notes || { video: {}, book: {}, paper: {}, audio: {}, web: {}, history: {} };
         // 将旧数据转换为 items 格式
         flowDataToItems();
       } catch (e) {
@@ -166,7 +167,7 @@
   
   // 将 items 数组转换为 flowData.contents 结构
   async function itemsToFlowData() {
-    flowData.contents = { video: [], book: [], paper: [], audio: [], web: [] };
+    flowData.contents = { video: [], book: [], paper: [], audio: [], web: [], history: [] };
     
     for (const item of items) {
       const platform = (item.platform || '').toLowerCase();
@@ -504,7 +505,7 @@
 
   // Tab 切换到下一个模式
   function switchToNextMode(reverse = false) {
-    const modes = ['video', 'book', 'paper', 'audio', 'web'];
+    const modes = ['video', 'book', 'paper', 'audio', 'web', 'history'];
     const currentIndex = modes.indexOf(flowData.currentMode);
     
     let nextIndex;
@@ -596,7 +597,8 @@
       book: '书籍列表',
       paper: '论文列表',
       audio: '音频列表',
-      web: '网页收藏'
+      web: '网页收藏',
+      history: '历史项目'
     };
     mediaTitle.textContent = titleMap[mode] || '内容列表';
     if (mediaCount) {
@@ -609,8 +611,13 @@
       mediaGrid.classList.toggle('list-view', currentView === 'list');
     }
 
+    if (mode === 'history') {
+      renderHistoryMode();
+      return;
+    }
+
     if (contents.length === 0) {
-      renderTabOutBoard();
+      renderMediaPlaceholder();
       if (contentTail) {
         contentTail.textContent = '';
       }
@@ -829,8 +836,27 @@
 
     renderMediaPlaceholder();
 
-    const { openTabs, deferredTabs } = await loadTabOutBoardData();
-    if (openTabs.length === 0 && deferredTabs.length === 0) {
+    const boardData = await loadTabOutBoardData();
+    const openTabs = filterHistoryCards(boardData.openTabs);
+    const deferredTabs = filterHistoryCards(boardData.deferredTabs);
+    const totalCount = openTabs.length + deferredTabs.length;
+
+    if (mediaCount) {
+      mediaCount.textContent = String(totalCount);
+    }
+    if (mediaStatus) {
+      mediaStatus.textContent = getHistoryStatusLabel(openTabs, deferredTabs);
+    }
+
+    if (totalCount === 0) {
+      mediaGrid.innerHTML = `
+        <section class="tabout-board-empty">
+          <div>
+            <strong>${searchQuery ? '没有匹配的历史项目' : '还没有历史项目'}</strong>
+            <p>${searchQuery ? '试试换个关键词，或者先清空搜索。' : '等你在 Tab Out 里积累打开标签和稍后保存项目后，这里会集中展示。'}</p>
+          </div>
+        </section>
+      `;
       return;
     }
 
@@ -843,6 +869,10 @@
         ${savedSection}
       </div>
     `;
+  }
+
+  async function renderHistoryMode() {
+    await renderTabOutBoard();
   }
 
   function renderTabOutBoardSection(title, countText, cards, label) {
@@ -889,6 +919,17 @@
     ]);
 
     return { openTabs, deferredTabs };
+  }
+
+  function filterHistoryCards(cards) {
+    if (!searchQuery) return cards;
+    const query = searchQuery.toLowerCase();
+    return cards.filter(card => {
+      const title = (card.title || '').toLowerCase();
+      const url = (card.url || '').toLowerCase();
+      const domain = (getBoardDomain(card.url) || '').toLowerCase();
+      return title.includes(query) || url.includes(query) || domain.includes(query);
+    });
   }
 
   async function loadTabOutOpenTabs() {
@@ -951,10 +992,104 @@
   }
 
   function renderInsights(contents) {
+    if (flowData.currentMode === 'history') {
+      renderHistoryInsights();
+      return;
+    }
+
     renderRecentList(contents);
     renderTagCloud(contents);
     renderProgress(contents);
     renderQuickActions();
+  }
+
+  async function renderHistoryInsights() {
+    const boardData = await loadTabOutBoardData();
+    const openTabs = filterHistoryCards(boardData.openTabs);
+    const deferredTabs = filterHistoryCards(boardData.deferredTabs);
+    const historyItems = [
+      ...openTabs.map(item => ({ ...item, bucket: '打开标签' })),
+      ...deferredTabs.map(item => ({ ...item, bucket: '稍后保存' }))
+    ];
+
+    renderHistoryRecentList(historyItems);
+    renderHistoryTagCloud(openTabs, deferredTabs, historyItems);
+    renderHistoryProgress(openTabs, deferredTabs, historyItems);
+    renderQuickActions();
+  }
+
+  function renderHistoryRecentList(historyItems) {
+    if (!recentList) return;
+
+    if (historyItems.length === 0) {
+      recentList.innerHTML = `<div class="progress-subtext">${searchQuery ? '没有匹配的历史项目' : '还没有可展示的历史项目'}</div>`;
+      return;
+    }
+
+    recentList.innerHTML = historyItems.slice(0, 3).map(item => `
+      <div class="recent-item">
+        <div class="recent-thumb">${item.faviconUrl ? `<img src="${escapeHtml(item.faviconUrl)}" alt="">` : '<span>历</span>'}</div>
+        <div>
+          <div class="recent-item-title">${escapeHtml(item.title || '未命名项目')}</div>
+          <div class="recent-item-meta">${escapeHtml(item.bucket)} · ${escapeHtml(getBoardDomain(item.url) || 'Tab Out')}</div>
+        </div>
+        <span class="bookmark-mark">⌁</span>
+      </div>
+    `).join('');
+  }
+
+  function renderHistoryTagCloud(openTabs, deferredTabs, historyItems) {
+    if (!tagCloud || !tagSummary) return;
+
+    const domainBuckets = new Map();
+    historyItems.forEach(item => {
+      const domain = getBoardDomain(item.url) || '其他';
+      domainBuckets.set(domain, (domainBuckets.get(domain) || 0) + 1);
+    });
+
+    const chips = [
+      { label: '历史模式', count: historyItems.length },
+      { label: 'Open tabs', count: openTabs.length },
+      { label: 'Saved for later', count: deferredTabs.length }
+    ];
+
+    Array.from(domainBuckets.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .forEach(([label, count]) => chips.push({ label, count }));
+
+    tagSummary.textContent = `${historyItems.length} 个历史项目`;
+    tagCloud.innerHTML = chips.map(chip => `
+      <span class="tag-chip">
+        <span>${escapeHtml(chip.label)}</span>
+        <span class="tag-chip-count">${chip.count}</span>
+      </span>
+    `).join('');
+  }
+
+  function renderHistoryProgress(openTabs, deferredTabs, historyItems) {
+    if (!progressGrid || !progressSummary || !progressBarFill) return;
+
+    const totalCount = historyItems.length;
+    const revisitScore = totalCount ? Math.min(100, Math.round((deferredTabs.length / Math.max(totalCount, 1)) * 100)) : 0;
+
+    progressGrid.innerHTML = [
+      { label: '打开标签', value: openTabs.length, subtext: '当前浏览中' },
+      { label: '稍后保存', value: deferredTabs.length, subtext: '历史沉淀' }
+    ].map(metric => `
+      <div class="progress-metric">
+        <div class="progress-label">${metric.label}</div>
+        <div class="progress-value">${metric.value}</div>
+        <div class="progress-subtext">${metric.subtext}</div>
+      </div>
+    `).join('');
+
+    progressSummary.textContent = totalCount > 0
+      ? `共 ${totalCount} 个历史项目，优先回看 ${deferredTabs.length} 个稍后保存条目`
+      : searchQuery
+        ? '当前搜索词下没有命中历史项目'
+        : '还没有积累到可回看的历史项目';
+    progressBarFill.style.width = `${revisitScore}%`;
   }
 
   function renderRecentList(contents) {
@@ -1091,6 +1226,9 @@
   }
 
   function getStatusLabel(mode, contents) {
+    if (mode === 'history') {
+      return searchQuery ? `检索历史项目中` : '回看 Tab Out 历史中';
+    }
     if (searchQuery) return `检索到 ${contents.length} 条结果`;
     if (currentSort === 'oldest') return '按最早添加排序';
     if (currentSort === 'pinned') return '置顶内容优先';
@@ -1131,9 +1269,19 @@
       book: '搜索书名、作者、主题或笔记内容...',
       paper: '搜索论文标题、作者、关键词或笔记内容...',
       audio: '搜索播客、作者、主题或笔记内容...',
-      web: '搜索网页标题、站点、主题或笔记内容...'
+      web: '搜索网页标题、站点、主题或笔记内容...',
+      history: '搜索历史项目标题、域名或链接...'
     };
     return placeholderMap[mode] || '搜索内容...';
+  }
+
+  function getHistoryStatusLabel(openTabs, deferredTabs) {
+    const totalCount = openTabs.length + deferredTabs.length;
+    if (searchQuery) return `检索到 ${totalCount} 个历史项目`;
+    if (totalCount === 0) return '等待历史项目出现';
+    if (openTabs.length === 0) return `稍后保存 ${deferredTabs.length} 项`;
+    if (deferredTabs.length === 0) return `打开标签 ${openTabs.length} 项`;
+    return `打开标签 ${openTabs.length} 项 · 稍后保存 ${deferredTabs.length} 项`;
   }
 
   // 打开内容（新窗口）或下载
