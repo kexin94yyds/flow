@@ -1151,6 +1151,12 @@
     return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32` : '';
   }
 
+  function getBoardMonogram(domain) {
+    const normalized = String(domain || '').replace(/^www\./, '').trim();
+    const first = normalized.charAt(0);
+    return first ? first.toUpperCase() : '•';
+  }
+
   async function loadHistoryLinkPreviewCache() {
     if (Object.keys(historyLinkPreviewCache).length > 0) return;
     if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
@@ -1185,11 +1191,13 @@
 
     if (action === 'focus-open-tab') {
       await focusHistoryTab(tabUrl);
+      showHistoryToast('已切换到标签页');
       return;
     }
 
     if (action === 'open-saved-tab') {
       await openHistoryLink(tabUrl);
+      showHistoryToast('已打开链接');
       return;
     }
 
@@ -1197,42 +1205,49 @@
       await saveHistoryTabForLater({ url: tabUrl, title: tabTitle });
       await closeHistoryTab(tabUrl, tabId);
       render();
+      showHistoryToast('已移到稍后保存');
       return;
     }
 
     if (action === 'save-open-tab-flow') {
       await saveHistoryTabToFlow({ url: tabUrl, title: tabTitle });
       render();
+      showHistoryToast('已保存到 Flow');
       return;
     }
 
     if (action === 'close-open-tab') {
       await closeHistoryTab(tabUrl, tabId);
       render();
+      showHistoryToast('已关闭标签');
       return;
     }
 
     if (action === 'close-all-open-tabs') {
       await closeAllHistoryOpenTabs();
       render();
+      showHistoryToast('已关闭全部打开标签');
       return;
     }
 
     if (action === 'dedup-open-tabs') {
       await closeDuplicateHistoryTabs(tabUrl);
       render();
+      showHistoryToast('已完成去重');
       return;
     }
 
     if (action === 'complete-saved-tab' && savedId) {
       await completeHistorySavedTab(savedId);
       render();
+      showHistoryToast('已归档到 Archive');
       return;
     }
 
     if (action === 'dismiss-saved-tab' && savedId) {
       await dismissHistorySavedTab(savedId);
       render();
+      showHistoryToast('已移除项目');
       return;
     }
 
