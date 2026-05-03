@@ -1097,6 +1097,7 @@
 
   async function loadTabOutDeferredTabs() {
     try {
+      await loadHistoryLinkPreviewCache();
       const stored = window.FlowStorage?.getMany
         ? await window.FlowStorage.getMany(['deferred'])
         : {};
@@ -1107,6 +1108,7 @@
         url: item.url,
         title: item.title || item.url || 'Untitled',
         faviconUrl: getBoardFavicon(item.url),
+        previewImageUrl: getHistoryPreview(item.url)?.imageUrl || '',
         savedAt: item.savedAt,
         completedAt: item.completedAt,
         completed: Boolean(item.completed)
