@@ -1184,6 +1184,11 @@
       return;
     }
 
+    if (action === 'open-saved-tab') {
+      await openHistoryLink(tabUrl);
+      return;
+    }
+
     if (action === 'defer-open-tab') {
       await saveHistoryTabForLater({ url: tabUrl, title: tabTitle });
       await closeHistoryTab(tabUrl, tabId);
@@ -1421,6 +1426,15 @@
       return 'video';
     }
     return 'web';
+  }
+
+  async function openHistoryLink(url) {
+    if (!url) return;
+    if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+      await chrome.tabs.create({ url });
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
   }
 
   function renderInsights(contents) {
