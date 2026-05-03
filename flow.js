@@ -65,6 +65,8 @@
   let searchQuery = '';  // 搜索关键词
   let currentSort = 'newest';
   let currentView = 'grid';
+  let historyArchiveOpen = false;
+  let historyArchiveQuery = '';
 
   // 模式配置
   const modeConfig = {
@@ -408,6 +410,8 @@
         startNoteEdit(noteEl, contentId);
       }
     });
+    mediaGrid.addEventListener('click', handleHistoryGridClick);
+    mediaGrid.addEventListener('input', handleHistoryGridInput);
 
     // URL 变化监听
     window.addEventListener('popstate', () => {
