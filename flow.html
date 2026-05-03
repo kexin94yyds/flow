@@ -1684,6 +1684,14 @@
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
     }
 
+    .tabout-project-fallback-mark {
+      font-family: "Newsreader", Georgia, serif;
+      font-size: 40px;
+      color: rgba(68, 68, 68, 0.28);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
     .tabout-project-body {
       padding: 10px 11px 12px;
       display: flex;
@@ -1786,6 +1794,11 @@
       transform: translateY(-1px);
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
       border-color: rgba(0, 0, 0, 0.12);
+    }
+
+    .tabout-action-btn:active {
+      transform: translateY(0);
+      box-shadow: none;
     }
 
     .tabout-action-btn.primary {
@@ -1933,12 +1946,38 @@
     }
 
     .history-empty-copy {
+      grid-column: 1 / -1;
       padding: 14px 16px;
       border-radius: 16px;
       background: #fafafa;
       color: #8b8b8b;
       font-size: 13px;
       line-height: 1.5;
+    }
+
+    .history-toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%) translateY(12px);
+      min-width: 180px;
+      max-width: min(420px, calc(100vw - 32px));
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(25, 25, 25, 0.92);
+      color: #ffffff;
+      font-size: 13px;
+      text-align: center;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 1000;
+    }
+
+    .history-toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     .tabout-board-empty {
@@ -2317,6 +2356,8 @@
       </div>
     </div>
   </div>
+
+  <div class="history-toast" id="historyToast" aria-live="polite"></div>
 
   <script src="vendor/jszip.min.js"></script>
   <script src="flow-storage.js"></script>
