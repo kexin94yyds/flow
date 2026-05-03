@@ -505,7 +505,7 @@
 
   // Tab 切换到下一个模式
   function switchToNextMode(reverse = false) {
-    const modes = ['video', 'book', 'paper', 'audio', 'web', 'history'];
+    const modes = ['history', 'video', 'book', 'paper', 'audio', 'web'];
     const currentIndex = modes.indexOf(flowData.currentMode);
     
     let nextIndex;
