@@ -1666,13 +1666,14 @@
     return placeholderMap[mode] || '搜索内容...';
   }
 
-  function getHistoryStatusLabel(openTabs, deferredTabs) {
-    const totalCount = openTabs.length + deferredTabs.length;
+  function getHistoryStatusLabel(openTabs, activeSavedTabs, archivedSavedTabs) {
+    const savedCount = activeSavedTabs.length + archivedSavedTabs.length;
+    const totalCount = openTabs.length + savedCount;
     if (searchQuery) return `检索到 ${totalCount} 个历史项目`;
     if (totalCount === 0) return '等待历史项目出现';
-    if (openTabs.length === 0) return `稍后保存 ${deferredTabs.length} 项`;
-    if (deferredTabs.length === 0) return `打开标签 ${openTabs.length} 项`;
-    return `打开标签 ${openTabs.length} 项 · 稍后保存 ${deferredTabs.length} 项`;
+    if (openTabs.length === 0) return `稍后保存 ${activeSavedTabs.length} 项 · 已归档 ${archivedSavedTabs.length} 项`;
+    if (savedCount === 0) return `打开标签 ${openTabs.length} 项`;
+    return `打开标签 ${openTabs.length} 项 · 稍后保存 ${activeSavedTabs.length} 项 · 已归档 ${archivedSavedTabs.length} 项`;
   }
 
   // 打开内容（新窗口）或下载
