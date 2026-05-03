@@ -42,6 +42,8 @@
   const progressSummary = document.getElementById('progressSummary');
   const progressBarFill = document.getElementById('progressBarFill');
   const quickActions = document.getElementById('quickActions');
+  const tabOutHistoryList = document.getElementById('tabOutHistoryList');
+  const tabOutHistoryCount = document.getElementById('tabOutHistoryCount');
   const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
 
   // 弹窗元素
@@ -826,6 +828,7 @@
 
   function renderInsights(contents) {
     renderRecentList(contents);
+    renderTabOutHistory();
     renderTagCloud(contents);
     renderProgress(contents);
     renderQuickActions();
