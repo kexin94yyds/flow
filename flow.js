@@ -973,7 +973,7 @@
       <article class="tabout-project-card" data-tab-url="${escapeHtml(url)}">
         <button class="tabout-project-thumb tabout-card-pressable" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="切换到此标签">
           ${card.previewImageUrl ? `<img class="tabout-project-preview" src="${escapeHtml(card.previewImageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
-          ${favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
+          ${!card.previewImageUrl && favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
         </button>
         <div class="tabout-project-body">
           <div class="tabout-project-domain-row">
