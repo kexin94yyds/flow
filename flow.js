@@ -850,14 +850,15 @@
 
     const boardData = await loadTabOutBoardData();
     const openTabs = filterHistoryCards(boardData.openTabs);
-    const deferredTabs = filterHistoryCards(boardData.deferredTabs);
-    const totalCount = openTabs.length + deferredTabs.length;
+    const activeSavedTabs = filterHistoryCards(boardData.activeSavedTabs);
+    const archivedSavedTabs = filterHistoryCards(boardData.archivedSavedTabs);
+    const totalCount = openTabs.length + activeSavedTabs.length + archivedSavedTabs.length;
 
     if (mediaCount) {
       mediaCount.textContent = String(totalCount);
     }
     if (mediaStatus) {
-      mediaStatus.textContent = getHistoryStatusLabel(openTabs, deferredTabs);
+      mediaStatus.textContent = getHistoryStatusLabel(openTabs, activeSavedTabs, archivedSavedTabs);
     }
 
     if (totalCount === 0) {
@@ -872,13 +873,10 @@
       return;
     }
 
-    const openSection = renderTabOutBoardSection('Open tabs', `${openTabs.length} tabs`, openTabs.slice(0, 9), '打开标签');
-    const savedSection = renderTabOutBoardSection('Saved for later', `${deferredTabs.length} items`, deferredTabs.slice(0, 6), '稍后保存');
-
     mediaGrid.innerHTML = `
       <div class="tabout-board">
-        ${openSection}
-        ${savedSection}
+        ${renderOpenTabsSection(openTabs)}
+        ${renderSavedTabsSection(activeSavedTabs, archivedSavedTabs)}
       </div>
     `;
   }
@@ -887,50 +885,140 @@
     await renderTabOutBoard();
   }
 
-  function renderTabOutBoardSection(title, countText, cards, label) {
-    if (!cards.length) return '';
+  function renderOpenTabsSection(openTabs) {
+    if (!openTabs.length) return '';
+
+    const duplicateCount = openTabs.reduce((sum, tab) => sum + Math.max(0, (tab.duplicateCount || 1) - 1), 0);
 
     return `
       <section class="tabout-board-section">
-        <div class="tabout-board-heading">
-          <strong>${escapeHtml(title)}</strong>
-          <span>${escapeHtml(countText)}</span>
+        <div class="tabout-board-heading tabout-board-heading-actions">
+          <div class="tabout-board-heading-copy">
+            <strong>Open tabs</strong>
+            <span>${escapeHtml(`${openTabs.length} tabs${duplicateCount ? ` · ${duplicateCount} duplicates` : ''}`)}</span>
+          </div>
+          <div class="tabout-board-heading-tools">
+            <button class="tabout-inline-action" data-history-action="close-all-open-tabs">全部关闭</button>
+          </div>
         </div>
         <div class="tabout-project-grid">
-          ${cards.map(card => renderTabOutProjectCard(card, label)).join('')}
+          ${openTabs.map(card => renderOpenTabCard(card)).join('')}
         </div>
       </section>
     `;
   }
 
-  function renderTabOutProjectCard(card, label) {
+  function renderSavedTabsSection(activeSavedTabs, archivedSavedTabs) {
+    const archiveItems = filterHistoryArchiveItems(archivedSavedTabs);
+    const archiveSummary = archivedSavedTabs.length
+      ? `Archive ${archivedSavedTabs.length}${historyArchiveQuery ? ` · ${archiveItems.length} 命中` : ''}`
+      : 'Archive 0';
+
+    return `
+      <section class="tabout-board-section">
+        <div class="tabout-board-heading">
+          <strong>Saved for later</strong>
+          <span>${escapeHtml(`${activeSavedTabs.length} items`)}</span>
+        </div>
+        <div class="history-saved-list">
+          ${activeSavedTabs.length
+            ? activeSavedTabs.map(item => renderSavedTabRow(item)).join('')
+            : `<div class="history-empty-copy">${searchQuery ? '没有匹配的稍后保存项目' : '还没有 active 的稍后保存项目'}</div>`}
+        </div>
+        <section class="history-archive-panel">
+          <button class="history-archive-toggle ${historyArchiveOpen ? 'open' : ''}" data-history-action="toggle-archive">
+            <span>${escapeHtml(archiveSummary)}</span>
+            <span>${historyArchiveOpen ? '收起' : '展开'}</span>
+          </button>
+          ${historyArchiveOpen ? `
+            <div class="history-archive-body">
+              <input
+                type="text"
+                class="history-archive-search"
+                value="${escapeHtml(historyArchiveQuery)}"
+                placeholder="搜索归档标题或链接..."
+              >
+              <div class="history-archive-list">
+                ${archiveItems.length
+                  ? archiveItems.map(item => renderArchiveTabRow(item)).join('')
+                  : `<div class="history-empty-copy">${historyArchiveQuery ? '没有匹配的归档项目' : '还没有归档项目'}</div>`}
+              </div>
+            </div>
+          ` : ''}
+        </section>
+      </section>
+    `;
+  }
+
+  function renderOpenTabCard(card) {
     const url = card.url || '#';
     const title = card.title || card.url || 'Untitled';
     const domain = getBoardDomain(url) || 'Tab Out';
     const favicon = card.faviconUrl || getBoardFavicon(url);
+    const duplicatePill = card.duplicateCount > 1
+      ? `<div class="tabout-project-pill warn">${card.duplicateCount} 个重复</div>`
+      : `<div class="tabout-project-pill">打开标签</div>`;
 
     return `
-      <a class="tabout-project-card" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="${escapeHtml(title)}">
-        <div class="tabout-project-thumb">
+      <article class="tabout-project-card" data-tab-url="${escapeHtml(url)}">
+        <button class="tabout-project-thumb tabout-card-pressable" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="切换到此标签">
           ${favicon ? `<img src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
-        </div>
+        </button>
         <div class="tabout-project-body">
           <div class="tabout-project-domain">${escapeHtml(domain)}</div>
-          <div class="tabout-project-title">${escapeHtml(title)}</div>
-          <div class="tabout-project-pill">${escapeHtml(label)}</div>
+          <button class="tabout-project-title tabout-card-pressable text" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="${escapeHtml(title)}">${escapeHtml(title)}</button>
+          ${duplicatePill}
           <div class="tabout-project-url">${escapeHtml(url)}</div>
+          <div class="tabout-project-actions">
+            <button class="tabout-action-btn primary" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}">打开</button>
+            <button class="tabout-action-btn" data-history-action="defer-open-tab" data-tab-url="${escapeHtml(url)}" data-tab-title="${escapeHtml(title)}">稍后</button>
+            <button class="tabout-action-btn" data-history-action="save-open-tab-flow" data-tab-url="${escapeHtml(url)}" data-tab-title="${escapeHtml(title)}">Flow</button>
+            <button class="tabout-action-btn danger" data-history-action="close-open-tab" data-tab-id="${card.id}" data-tab-url="${escapeHtml(url)}">关闭</button>
+            ${card.duplicateCount > 1 ? `<button class="tabout-action-btn" data-history-action="dedup-open-tabs" data-tab-url="${escapeHtml(url)}">去重</button>` : ''}
+          </div>
         </div>
+      </article>
+    `;
+  }
+
+  function renderSavedTabRow(item) {
+    const domain = getBoardDomain(item.url) || 'Tab Out';
+    const title = item.title || item.url || 'Untitled';
+
+    return `
+      <div class="history-saved-row">
+        <button class="history-check-btn" data-history-action="complete-saved-tab" data-saved-id="${item.id}" title="标记完成">✓</button>
+        <div class="history-saved-main">
+          <a class="history-saved-title" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">${escapeHtml(title)}</a>
+          <div class="history-saved-meta">${escapeHtml(domain)} · 保存于 ${escapeHtml(formatRelativeDate(item.savedAt))}</div>
+        </div>
+        <button class="history-dismiss-btn" data-history-action="dismiss-saved-tab" data-saved-id="${item.id}" title="移除">×</button>
+      </div>
+    `;
+  }
+
+  function renderArchiveTabRow(item) {
+    const title = item.title || item.url || 'Untitled';
+    const stamp = item.completedAt || item.savedAt;
+    return `
+      <a class="history-archive-item" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">
+        <span class="history-archive-item-title">${escapeHtml(title)}</span>
+        <span class="history-archive-item-date">${escapeHtml(formatRelativeDate(stamp))}</span>
       </a>
     `;
   }
 
   async function loadTabOutBoardData() {
-    const [openTabs, deferredTabs] = await Promise.all([
+    const [openTabs, savedTabs] = await Promise.all([
       loadTabOutOpenTabs(),
       loadTabOutDeferredTabs()
     ]);
 
-    return { openTabs, deferredTabs };
+    return {
+      openTabs,
+      activeSavedTabs: savedTabs.active,
+      archivedSavedTabs: savedTabs.archived
+    };
   }
 
   function filterHistoryCards(cards) {
@@ -944,18 +1032,36 @@
     });
   }
 
+  function filterHistoryArchiveItems(cards) {
+    if (!historyArchiveQuery) return cards;
+    const query = historyArchiveQuery.toLowerCase();
+    return cards.filter(card => {
+      const title = (card.title || '').toLowerCase();
+      const url = (card.url || '').toLowerCase();
+      return title.includes(query) || url.includes(query);
+    });
+  }
+
   async function loadTabOutOpenTabs() {
     if (typeof chrome === 'undefined' || !chrome.tabs?.query) return [];
 
     try {
       const extensionUrl = chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/` : '';
-      const tabs = await chrome.tabs.query({});
+      const tabs = (await chrome.tabs.query({})).filter(tab => isBoardUrl(tab.url, extensionUrl));
+      const urlCounts = new Map();
+
+      tabs.forEach(tab => {
+        if (!tab.url) return;
+        urlCounts.set(tab.url, (urlCounts.get(tab.url) || 0) + 1);
+      });
+
       return tabs
-        .filter(tab => isBoardUrl(tab.url, extensionUrl))
         .map(tab => ({
+          id: tab.id,
           url: tab.url,
           title: tab.title || tab.url || 'Untitled',
-          faviconUrl: tab.favIconUrl || getBoardFavicon(tab.url)
+          faviconUrl: tab.favIconUrl || getBoardFavicon(tab.url),
+          duplicateCount: urlCounts.get(tab.url) || 1
         }));
     } catch (err) {
       console.warn('[flow] Could not load Tab Out open tabs:', err);
@@ -969,18 +1075,30 @@
         ? await window.FlowStorage.getMany(['deferred'])
         : {};
       const deferred = Array.isArray(stored.deferred) ? stored.deferred : [];
+      const visible = deferred.filter(item => !item.dismissed);
+      const normalize = item => ({
+        id: item.id,
+        url: item.url,
+        title: item.title || item.url || 'Untitled',
+        faviconUrl: getBoardFavicon(item.url),
+        savedAt: item.savedAt,
+        completedAt: item.completedAt,
+        completed: Boolean(item.completed)
+      });
 
-      return deferred
-        .filter(item => !item.dismissed)
-        .sort((a, b) => getTimestamp(b.savedAt || b.completedAt) - getTimestamp(a.savedAt || a.completedAt))
-        .map(item => ({
-          url: item.url,
-          title: item.title || item.url || 'Untitled',
-          faviconUrl: getBoardFavicon(item.url)
-        }));
+      return {
+        active: visible
+          .filter(item => !item.completed)
+          .sort((a, b) => getTimestamp(b.savedAt) - getTimestamp(a.savedAt))
+          .map(normalize),
+        archived: visible
+          .filter(item => item.completed)
+          .sort((a, b) => getTimestamp(b.completedAt || b.savedAt) - getTimestamp(a.completedAt || a.savedAt))
+          .map(normalize)
+      };
     } catch (err) {
       console.warn('[flow] Could not load Tab Out saved tabs:', err);
-      return [];
+      return { active: [], archived: [] };
     }
   }
 
@@ -1001,6 +1119,263 @@
   function getBoardFavicon(url) {
     const domain = getBoardDomain(url);
     return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32` : '';
+  }
+
+  async function handleHistoryGridClick(event) {
+    if (flowData.currentMode !== 'history') return;
+
+    const actionEl = event.target.closest('[data-history-action]');
+    if (!actionEl) return;
+
+    event.preventDefault();
+    const action = actionEl.dataset.historyAction;
+    const tabUrl = actionEl.dataset.tabUrl;
+    const tabTitle = actionEl.dataset.tabTitle || tabUrl || '';
+    const savedId = actionEl.dataset.savedId;
+    const tabId = Number(actionEl.dataset.tabId);
+
+    if (action === 'focus-open-tab') {
+      await focusHistoryTab(tabUrl);
+      return;
+    }
+
+    if (action === 'defer-open-tab') {
+      await saveHistoryTabForLater({ url: tabUrl, title: tabTitle });
+      await closeHistoryTab(tabUrl, tabId);
+      render();
+      return;
+    }
+
+    if (action === 'save-open-tab-flow') {
+      await saveHistoryTabToFlow({ url: tabUrl, title: tabTitle });
+      render();
+      return;
+    }
+
+    if (action === 'close-open-tab') {
+      await closeHistoryTab(tabUrl, tabId);
+      render();
+      return;
+    }
+
+    if (action === 'close-all-open-tabs') {
+      await closeAllHistoryOpenTabs();
+      render();
+      return;
+    }
+
+    if (action === 'dedup-open-tabs') {
+      await closeDuplicateHistoryTabs(tabUrl);
+      render();
+      return;
+    }
+
+    if (action === 'complete-saved-tab' && savedId) {
+      await completeHistorySavedTab(savedId);
+      render();
+      return;
+    }
+
+    if (action === 'dismiss-saved-tab' && savedId) {
+      await dismissHistorySavedTab(savedId);
+      render();
+      return;
+    }
+
+    if (action === 'toggle-archive') {
+      historyArchiveOpen = !historyArchiveOpen;
+      await renderTabOutBoard();
+    }
+  }
+
+  async function handleHistoryGridInput(event) {
+    if (flowData.currentMode !== 'history') return;
+    if (!event.target.classList.contains('history-archive-search')) return;
+
+    historyArchiveQuery = event.target.value.trim();
+    const cursor = event.target.selectionStart ?? historyArchiveQuery.length;
+    await renderTabOutBoard();
+    const nextInput = mediaGrid.querySelector('.history-archive-search');
+    if (nextInput) {
+      nextInput.focus();
+      nextInput.setSelectionRange(cursor, cursor);
+    }
+  }
+
+  async function focusHistoryTab(url) {
+    if (!url || typeof chrome === 'undefined' || !chrome.tabs?.query) return;
+
+    const allTabs = await chrome.tabs.query({});
+    const currentWindow = chrome.windows?.getCurrent ? await chrome.windows.getCurrent() : null;
+    let matches = allTabs.filter(tab => tab.url === url);
+
+    if (matches.length === 0) {
+      try {
+        const targetHost = new URL(url).hostname;
+        matches = allTabs.filter(tab => {
+          try {
+            return new URL(tab.url).hostname === targetHost;
+          } catch {
+            return false;
+          }
+        });
+      } catch {}
+    }
+
+    if (matches.length === 0) return;
+
+    const match = matches.find(tab => currentWindow && tab.windowId !== currentWindow.id) || matches[0];
+    await chrome.tabs.update(match.id, { active: true });
+    if (chrome.windows?.update) {
+      await chrome.windows.update(match.windowId, { focused: true });
+    }
+  }
+
+  async function closeHistoryTab(url, tabId) {
+    if (typeof chrome === 'undefined' || !chrome.tabs?.remove) return;
+
+    if (Number.isFinite(tabId)) {
+      await chrome.tabs.remove(tabId);
+      return;
+    }
+
+    const allTabs = await chrome.tabs.query({});
+    const match = allTabs.find(tab => tab.url === url);
+    if (match) {
+      await chrome.tabs.remove(match.id);
+    }
+  }
+
+  async function closeAllHistoryOpenTabs() {
+    if (typeof chrome === 'undefined' || !chrome.tabs?.query) return;
+
+    const openTabs = await loadTabOutOpenTabs();
+    const ids = openTabs.map(tab => tab.id).filter(Number.isFinite);
+    if (ids.length) {
+      await chrome.tabs.remove(ids);
+    }
+  }
+
+  async function closeDuplicateHistoryTabs(url) {
+    if (!url || typeof chrome === 'undefined' || !chrome.tabs?.query) return;
+
+    const allTabs = await chrome.tabs.query({});
+    const matching = allTabs.filter(tab => tab.url === url);
+    if (matching.length <= 1) return;
+
+    const keep = matching.find(tab => tab.active) || matching[0];
+    const toClose = matching.filter(tab => tab.id !== keep.id).map(tab => tab.id);
+    if (toClose.length) {
+      await chrome.tabs.remove(toClose);
+    }
+  }
+
+  async function saveHistoryTabForLater(tab) {
+    if (!tab?.url) return;
+
+    const stored = window.FlowStorage?.getMany
+      ? await window.FlowStorage.getMany(['deferred'])
+      : {};
+    const deferred = Array.isArray(stored.deferred) ? stored.deferred : [];
+
+    deferred.push({
+      id: Date.now().toString(),
+      url: tab.url,
+      title: tab.title || tab.url,
+      savedAt: new Date().toISOString(),
+      completed: false,
+      dismissed: false
+    });
+
+    if (window.FlowStorage?.setMany) {
+      await window.FlowStorage.setMany({ deferred });
+    } else if (window.FlowStorage?.set) {
+      await window.FlowStorage.set('deferred', deferred);
+    } else if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      await chrome.storage.local.set({ deferred });
+    }
+  }
+
+  async function completeHistorySavedTab(id) {
+    if (!id) return;
+
+    const stored = window.FlowStorage?.getMany
+      ? await window.FlowStorage.getMany(['deferred'])
+      : {};
+    const deferred = Array.isArray(stored.deferred) ? stored.deferred : [];
+    const item = deferred.find(entry => entry.id === id);
+    if (!item) return;
+
+    item.completed = true;
+    item.completedAt = new Date().toISOString();
+
+    if (window.FlowStorage?.setMany) {
+      await window.FlowStorage.setMany({ deferred });
+    } else if (window.FlowStorage?.set) {
+      await window.FlowStorage.set('deferred', deferred);
+    } else if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      await chrome.storage.local.set({ deferred });
+    }
+  }
+
+  async function dismissHistorySavedTab(id) {
+    if (!id) return;
+
+    const stored = window.FlowStorage?.getMany
+      ? await window.FlowStorage.getMany(['deferred'])
+      : {};
+    const deferred = Array.isArray(stored.deferred) ? stored.deferred : [];
+    const item = deferred.find(entry => entry.id === id);
+    if (!item) return;
+
+    item.dismissed = true;
+
+    if (window.FlowStorage?.setMany) {
+      await window.FlowStorage.setMany({ deferred });
+    } else if (window.FlowStorage?.set) {
+      await window.FlowStorage.set('deferred', deferred);
+    } else if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      await chrome.storage.local.set({ deferred });
+    }
+  }
+
+  async function saveHistoryTabToFlow(tab) {
+    if (!tab?.url) return;
+
+    const existingItem = findFlowItemByUrl(tab.url);
+    const targetMode = inferHistoryFlowMode(tab.url);
+    const payload = {
+      id: existingItem?.id || generateId(),
+      url: tab.url,
+      title: tab.title || tab.url,
+      image: existingItem?.image || '',
+      note: existingItem?.note || getBoardDomain(tab.url),
+      createdAt: existingItem?.createdAt || new Date().toISOString(),
+      pinned: existingItem?.pinned || false,
+      platform: getPlatformFromMode(targetMode, tab.url)
+    };
+
+    if (existingItem) {
+      Object.assign(existingItem, payload);
+    } else {
+      flowData.contents[targetMode] = flowData.contents[targetMode] || [];
+      flowData.contents[targetMode].unshift(payload);
+    }
+
+    await saveData();
+  }
+
+  function findFlowItemByUrl(url) {
+    return Object.values(flowData.contents)
+      .flat()
+      .find(item => item.url === url) || null;
+  }
+
+  function inferHistoryFlowMode(url) {
+    if (url?.includes('youtube.com') || url?.includes('youtu.be') || url?.includes('bilibili.com')) {
+      return 'video';
+    }
+    return 'web';
   }
 
   function renderInsights(contents) {
