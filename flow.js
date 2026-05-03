@@ -1449,11 +1449,38 @@
 
   async function openHistoryLink(url) {
     if (!url) return;
+
+    if (isInternalHistoryUrl(url)) {
+      if (typeof chrome !== 'undefined' && chrome.runtime?.id && url.startsWith(`chrome-extension://${chrome.runtime.id}/`)) {
+        window.location.href = url;
+        return;
+      }
+
+      if (typeof chrome !== 'undefined' && chrome.tabs?.query) {
+        const allTabs = await chrome.tabs.query({});
+        const match = allTabs.find(tab => tab.url === url);
+        if (match) {
+          await chrome.tabs.update(match.id, { active: true });
+          if (chrome.windows?.update) {
+            await chrome.windows.update(match.windowId, { focused: true });
+          }
+          return;
+        }
+      }
+
+      showHistoryToast('这类内部页面不能直接新开');
+      return;
+    }
+
     if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
       await chrome.tabs.create({ url });
       return;
     }
     window.open(url, '_blank', 'noopener');
+  }
+
+  function isInternalHistoryUrl(url) {
+    return /^(chrome-extension|chrome|about):/i.test(String(url || ''));
   }
 
   function showHistoryToast(message) {
