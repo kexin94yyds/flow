@@ -1393,15 +1393,17 @@
   async function renderHistoryInsights() {
     const boardData = await loadTabOutBoardData();
     const openTabs = filterHistoryCards(boardData.openTabs);
-    const deferredTabs = filterHistoryCards(boardData.deferredTabs);
+    const activeSavedTabs = filterHistoryCards(boardData.activeSavedTabs);
+    const archivedSavedTabs = filterHistoryCards(boardData.archivedSavedTabs);
     const historyItems = [
       ...openTabs.map(item => ({ ...item, bucket: '打开标签' })),
-      ...deferredTabs.map(item => ({ ...item, bucket: '稍后保存' }))
+      ...activeSavedTabs.map(item => ({ ...item, bucket: '稍后保存' })),
+      ...archivedSavedTabs.map(item => ({ ...item, bucket: '已归档' }))
     ];
 
     renderHistoryRecentList(historyItems);
-    renderHistoryTagCloud(openTabs, deferredTabs, historyItems);
-    renderHistoryProgress(openTabs, deferredTabs, historyItems);
+    renderHistoryTagCloud(openTabs, activeSavedTabs, archivedSavedTabs, historyItems);
+    renderHistoryProgress(openTabs, activeSavedTabs, archivedSavedTabs, historyItems);
     renderQuickActions();
   }
 
@@ -1425,7 +1427,7 @@
     `).join('');
   }
 
-  function renderHistoryTagCloud(openTabs, deferredTabs, historyItems) {
+  function renderHistoryTagCloud(openTabs, activeSavedTabs, archivedSavedTabs, historyItems) {
     if (!tagCloud || !tagSummary) return;
 
     const domainBuckets = new Map();
@@ -1437,7 +1439,8 @@
     const chips = [
       { label: '历史模式', count: historyItems.length },
       { label: 'Open tabs', count: openTabs.length },
-      { label: 'Saved for later', count: deferredTabs.length }
+      { label: 'Saved for later', count: activeSavedTabs.length },
+      { label: 'Archive', count: archivedSavedTabs.length }
     ];
 
     Array.from(domainBuckets.entries())
@@ -1454,15 +1457,16 @@
     `).join('');
   }
 
-  function renderHistoryProgress(openTabs, deferredTabs, historyItems) {
+  function renderHistoryProgress(openTabs, activeSavedTabs, archivedSavedTabs, historyItems) {
     if (!progressGrid || !progressSummary || !progressBarFill) return;
 
     const totalCount = historyItems.length;
-    const revisitScore = totalCount ? Math.min(100, Math.round((deferredTabs.length / Math.max(totalCount, 1)) * 100)) : 0;
+    const revisitScore = totalCount ? Math.min(100, Math.round(((activeSavedTabs.length + archivedSavedTabs.length) / Math.max(totalCount, 1)) * 100)) : 0;
 
     progressGrid.innerHTML = [
       { label: '打开标签', value: openTabs.length, subtext: '当前浏览中' },
-      { label: '稍后保存', value: deferredTabs.length, subtext: '历史沉淀' }
+      { label: '稍后保存', value: activeSavedTabs.length, subtext: '待回看' },
+      { label: '已归档', value: archivedSavedTabs.length, subtext: '已完成' }
     ].map(metric => `
       <div class="progress-metric">
         <div class="progress-label">${metric.label}</div>
@@ -1472,7 +1476,7 @@
     `).join('');
 
     progressSummary.textContent = totalCount > 0
-      ? `共 ${totalCount} 个历史项目，优先回看 ${deferredTabs.length} 个稍后保存条目`
+      ? `共 ${totalCount} 个历史项目，待回看 ${activeSavedTabs.length} 个，已归档 ${archivedSavedTabs.length} 个`
       : searchQuery
         ? '当前搜索词下没有命中历史项目'
         : '还没有积累到可回看的历史项目';
