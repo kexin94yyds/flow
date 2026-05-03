@@ -1155,8 +1155,8 @@
     }
 
     .media-grid {
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
       min-height: 100%;
       align-content: start;
     }
@@ -1168,7 +1168,7 @@
     .media-card {
       border-radius: 8px;
       border: 1px solid rgba(0, 0, 0, 0.06);
-      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.045);
+      box-shadow: 0 10px 22px rgba(0, 0, 0, 0.05);
       background: #ffffff;
       cursor: default;
     }
@@ -1185,12 +1185,12 @@
 
     .media-card-thumb {
       border-bottom: 1px solid rgba(141, 111, 84, 0.06);
-      aspect-ratio: 16 / 8.6;
+      aspect-ratio: 16 / 9.4;
     }
 
     .media-card-content {
-      padding: 12px 14px 8px;
-      gap: 7px;
+      padding: 14px 16px 10px;
+      gap: 8px;
     }
 
     .media-card-meta {
@@ -1205,16 +1205,16 @@
     }
 
     .media-card-title {
-      font-size: 14px;
-      line-height: 1.38;
+      font-size: 15px;
+      line-height: 1.45;
       color: #252525;
-      min-height: 38px;
+      min-height: 44px;
     }
 
     .media-card-note {
-      margin-top: 4px;
-      padding: 8px 10px;
-      min-height: 34px;
+      margin-top: 6px;
+      padding: 9px 12px;
+      min-height: 40px;
       background: #fafafa;
       border-radius: 12px;
       border: 1px solid rgba(0, 0, 0, 0.06);
@@ -1231,7 +1231,7 @@
     }
 
     .media-card-notes {
-      padding: 0 14px 8px;
+      padding: 2px 16px 10px;
       background: transparent;
     }
 
@@ -1297,7 +1297,7 @@
     }
 
     .media-card-footer {
-      padding: 8px 14px 12px;
+      padding: 10px 16px 14px;
       background: rgba(255, 253, 249, 0.72);
       border-top: 1px solid rgba(141, 111, 84, 0.08);
       color: #938579;
@@ -1367,90 +1367,10 @@
 
     .recent-list,
     .tag-cloud,
-    .quick-actions,
-    .tabout-history-list {
+    .quick-actions {
       display: flex;
       flex-direction: column;
       gap: 12px;
-    }
-
-    .tabout-history-section {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .tabout-history-section + .tabout-history-section {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
-    }
-
-    .tabout-history-kicker {
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #989898;
-    }
-
-    .tabout-history-item {
-      display: grid;
-      grid-template-columns: 30px minmax(0, 1fr);
-      gap: 10px;
-      align-items: center;
-      padding: 10px;
-      border-radius: 14px;
-      background: #fafafa;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .tabout-history-item:hover {
-      background: #ffffff;
-      border-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .tabout-history-icon {
-      width: 30px;
-      height: 30px;
-      border-radius: 10px;
-      background: #ffffff;
-      border: 1px solid rgba(0, 0, 0, 0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      color: #777;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .tabout-history-icon img {
-      width: 16px;
-      height: 16px;
-    }
-
-    .tabout-history-title {
-      font-size: 13px;
-      line-height: 1.35;
-      color: #252525;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 3px;
-    }
-
-    .tabout-history-meta {
-      display: flex;
-      gap: 8px;
-      min-width: 0;
-      font-size: 11px;
-      line-height: 1.3;
-      color: #8b8b8b;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
     .recent-item {
