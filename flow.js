@@ -1060,6 +1060,7 @@
     if (typeof chrome === 'undefined' || !chrome.tabs?.query) return [];
 
     try {
+      await loadHistoryLinkPreviewCache();
       const extensionUrl = chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/` : '';
       const tabs = (await chrome.tabs.query({})).filter(tab => isBoardUrl(tab.url, extensionUrl));
       const urlCounts = new Map();
@@ -1075,7 +1076,9 @@
           url: tab.url,
           title: tab.title || tab.url || 'Untitled',
           faviconUrl: tab.favIconUrl || getBoardFavicon(tab.url),
-          duplicateCount: urlCounts.get(tab.url) || 1
+          duplicateCount: urlCounts.get(tab.url) || 1,
+          previewImageUrl: getHistoryPreview(tab.url)?.imageUrl || '',
+          previewDescription: getHistoryPreview(tab.url)?.description || getBoardDomain(tab.url) || ''
         }));
     } catch (err) {
       console.warn('[flow] Could not load Tab Out open tabs:', err);
@@ -1133,6 +1136,25 @@
   function getBoardFavicon(url) {
     const domain = getBoardDomain(url);
     return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32` : '';
+  }
+
+  async function loadHistoryLinkPreviewCache() {
+    if (Object.keys(historyLinkPreviewCache).length > 0) return;
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+
+    try {
+      const result = await chrome.storage.local.get(HISTORY_LINK_PREVIEW_CACHE_KEY);
+      historyLinkPreviewCache = result[HISTORY_LINK_PREVIEW_CACHE_KEY] || {};
+    } catch {
+      historyLinkPreviewCache = {};
+    }
+  }
+
+  function getHistoryPreview(url) {
+    const cached = historyLinkPreviewCache[url];
+    if (!cached) return null;
+    if (!cached.fetchedAt || Date.now() - cached.fetchedAt > HISTORY_LINK_PREVIEW_MAX_AGE) return null;
+    return cached;
   }
 
   async function handleHistoryGridClick(event) {
