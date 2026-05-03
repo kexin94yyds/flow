@@ -972,6 +972,7 @@
       <article class="tabout-project-card" data-tab-url="${escapeHtml(url)}">
         <button class="tabout-project-thumb tabout-card-pressable" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="切换到此标签">
           ${card.previewImageUrl ? `<img class="tabout-project-preview" src="${escapeHtml(card.previewImageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
+          ${!card.previewImageUrl ? `<div class="tabout-project-fallback-mark">${escapeHtml(getBoardMonogram(domain))}</div>` : ''}
           ${!card.previewImageUrl && favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
         </button>
         <div class="tabout-project-body">
@@ -1012,6 +1013,7 @@
       <article class="tabout-project-card">
         <button class="tabout-project-thumb tabout-card-pressable" data-history-action="open-saved-tab" data-tab-url="${escapeHtml(item.url)}" title="打开链接">
           ${item.previewImageUrl ? `<img class="tabout-project-preview" src="${escapeHtml(item.previewImageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
+          ${!item.previewImageUrl ? `<div class="tabout-project-fallback-mark">${escapeHtml(getBoardMonogram(domain))}</div>` : ''}
           ${!item.previewImageUrl && favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
         </button>
         <div class="tabout-project-body">
