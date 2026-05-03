@@ -888,7 +888,12 @@
   function renderOpenTabsSection(openTabs) {
     if (!openTabs.length) return '';
 
-    const duplicateCount = openTabs.reduce((sum, tab) => sum + Math.max(0, (tab.duplicateCount || 1) - 1), 0);
+    const duplicateMap = new Map();
+    openTabs.forEach(tab => {
+      if (!tab.url) return;
+      duplicateMap.set(tab.url, tab.duplicateCount || 1);
+    });
+    const duplicateCount = Array.from(duplicateMap.values()).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
 
     return `
       <section class="tabout-board-section">
