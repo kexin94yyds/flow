@@ -1456,6 +1456,18 @@
     window.open(url, '_blank', 'noopener');
   }
 
+  function showHistoryToast(message) {
+    const toast = document.getElementById('historyToast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.classList.add('visible');
+    clearTimeout(showHistoryToast.timeoutId);
+    showHistoryToast.timeoutId = window.setTimeout(() => {
+      toast.classList.remove('visible');
+    }, 1800);
+  }
+
   function renderInsights(contents) {
     if (flowData.currentMode === 'history') {
       renderHistoryInsights();
