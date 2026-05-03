@@ -550,10 +550,18 @@
     }
     if (sortSelect) {
       sortSelect.value = currentSort;
+      const sortWrap = sortSelect.closest('.media-sort');
+      if (sortWrap) {
+        sortWrap.style.display = mode === 'history' ? 'none' : '';
+      }
     }
     viewToggleBtns.forEach(button => {
       button.classList.toggle('active', button.dataset.view === currentView);
     });
+    const viewToggle = viewToggleBtns[0]?.closest('.view-toggle');
+    if (viewToggle) {
+      viewToggle.style.display = mode === 'history' ? 'none' : '';
+    }
 
     // 渲染媒体区和右侧辅助列
     renderMedia(visibleContents);
