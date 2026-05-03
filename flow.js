@@ -964,7 +964,6 @@
     const title = card.title || card.url || 'Untitled';
     const domain = getBoardDomain(url) || 'Tab Out';
     const favicon = card.faviconUrl || getBoardFavicon(url);
-    const description = card.previewDescription || domain;
     const duplicateBadge = card.duplicateCount > 1
       ? `<span class="tabout-project-dupe">${card.duplicateCount}x</span>`
       : '';
@@ -981,7 +980,6 @@
             ${duplicateBadge}
           </div>
           <button class="tabout-project-title tabout-card-pressable text" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="${escapeHtml(title)}">${escapeHtml(title)}</button>
-          <div class="tabout-project-description">${escapeHtml(description)}</div>
           <div class="tabout-project-url">${escapeHtml(url)}</div>
           <div class="tabout-project-actions">
             <button class="tabout-action-btn primary" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}">打开</button>
