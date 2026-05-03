@@ -42,8 +42,6 @@
   const progressSummary = document.getElementById('progressSummary');
   const progressBarFill = document.getElementById('progressBarFill');
   const quickActions = document.getElementById('quickActions');
-  const tabOutHistoryList = document.getElementById('tabOutHistoryList');
-  const tabOutHistoryCount = document.getElementById('tabOutHistoryCount');
   const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
 
   // 弹窗元素
@@ -828,7 +826,6 @@
 
   function renderInsights(contents) {
     renderRecentList(contents);
-    renderTabOutHistory();
     renderTagCloud(contents);
     renderProgress(contents);
     renderQuickActions();
@@ -949,130 +946,6 @@
         }
       });
     });
-  }
-
-  async function renderTabOutHistory() {
-    if (!tabOutHistoryList) return;
-
-    const { openTabs, deferredTabs } = await loadTabOutHistory();
-    const total = openTabs.length + deferredTabs.length;
-
-    if (tabOutHistoryCount) {
-      tabOutHistoryCount.textContent = `${total} 项`;
-    }
-
-    if (!total) {
-      tabOutHistoryList.innerHTML = '<div class="progress-subtext">暂无 Tab Out 记录</div>';
-      return;
-    }
-
-    const openItems = openTabs.slice(0, 4).map(tab => renderTabOutHistoryItem(tab, '打开标签')).join('');
-    const savedItems = deferredTabs.slice(0, 4).map(tab => renderTabOutHistoryItem(tab, '稍后保存')).join('');
-
-    tabOutHistoryList.innerHTML = `
-      ${openItems ? `
-        <div class="tabout-history-section">
-          <div class="tabout-history-kicker">Open tabs · ${openTabs.length}</div>
-          ${openItems}
-        </div>
-      ` : ''}
-      ${savedItems ? `
-        <div class="tabout-history-section">
-          <div class="tabout-history-kicker">Saved for later · ${deferredTabs.length}</div>
-          ${savedItems}
-        </div>
-      ` : ''}
-    `;
-  }
-
-  async function loadTabOutHistory() {
-    const [openTabs, deferredTabs] = await Promise.all([
-      loadOpenTabsHistory(),
-      loadDeferredTabsHistory()
-    ]);
-
-    return { openTabs, deferredTabs };
-  }
-
-  async function loadOpenTabsHistory() {
-    if (typeof chrome === 'undefined' || !chrome.tabs?.query) return [];
-
-    try {
-      const extensionUrl = chrome.runtime?.id ? `chrome-extension://${chrome.runtime.id}/` : '';
-      const tabs = await chrome.tabs.query({});
-      return tabs
-        .filter(tab => isHistoryUrl(tab.url, extensionUrl))
-        .map(tab => ({
-          url: tab.url,
-          title: tab.title || tab.url || '未命名标签',
-          faviconUrl: tab.favIconUrl || getFaviconUrl(tab.url),
-          meta: getDomainFromUrl(tab.url) || '打开标签'
-        }));
-    } catch (err) {
-      console.warn('[flow] Could not load Tab Out open tabs:', err);
-      return [];
-    }
-  }
-
-  async function loadDeferredTabsHistory() {
-    try {
-      const stored = window.FlowStorage?.getMany
-        ? await window.FlowStorage.getMany(['deferred'])
-        : {};
-      const deferred = Array.isArray(stored.deferred) ? stored.deferred : [];
-
-      return deferred
-        .filter(item => !item.dismissed)
-        .sort((a, b) => getTimestamp(b.savedAt || b.completedAt) - getTimestamp(a.savedAt || a.completedAt))
-        .map(item => ({
-          url: item.url,
-          title: item.title || item.url || '未命名项目',
-          faviconUrl: getFaviconUrl(item.url),
-          meta: `${getDomainFromUrl(item.url) || 'Saved'} · ${formatRelativeDate(item.savedAt || item.completedAt)}`
-        }));
-    } catch (err) {
-      console.warn('[flow] Could not load Tab Out deferred tabs:', err);
-      return [];
-    }
-  }
-
-  function renderTabOutHistoryItem(item, fallbackMeta) {
-    const title = item.title || item.url || '未命名项目';
-    const url = item.url || '#';
-    const favicon = item.faviconUrl;
-
-    return `
-      <a class="tabout-history-item" href="${escapeHtml(url)}" target="_blank" rel="noopener" title="${escapeHtml(title)}">
-        <span class="tabout-history-icon">
-          ${favicon ? `<img src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : 'T'}
-        </span>
-        <span>
-          <span class="tabout-history-title">${escapeHtml(title)}</span>
-          <span class="tabout-history-meta">
-            <span>${escapeHtml(item.meta || fallbackMeta)}</span>
-          </span>
-        </span>
-      </a>
-    `;
-  }
-
-  function isHistoryUrl(url, extensionUrl) {
-    if (!url) return false;
-    if (extensionUrl && url.startsWith(extensionUrl)) return false;
-    return !/^(chrome|chrome-extension|edge|about):/i.test(url);
-  }
-
-  function getDomainFromUrl(url) {
-    try {
-      return new URL(url).hostname.replace(/^www\./, '');
-    } catch {
-      return '';
-    }
-  }
-
-  function getFaviconUrl(url) {
-    const domain = getDomainFromUrl(url);
-    return domain ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32` : '';
   }
 
   function getMiniThumbHtml(content, mode) {
