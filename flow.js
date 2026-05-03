@@ -67,6 +67,10 @@
   let currentView = 'grid';
   let historyArchiveOpen = false;
   let historyArchiveQuery = '';
+  let historyLinkPreviewCache = {};
+
+  const HISTORY_LINK_PREVIEW_CACHE_KEY = 'link_previews_v3';
+  const HISTORY_LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 
   // 模式配置
   const modeConfig = {
