@@ -1212,15 +1212,10 @@ function renderTabPreviewCard(tab, urlCounts) {
             ${ICONS.archive}
             Save
           </button>
-          <button class="action-btn flow-save" data-action="save-to-flow" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}">
-            ${ICONS.archive}
-            Flow
-          </button>
           <button class="action-btn close-tabs" data-action="close-single-tab" data-tab-url="${safeUrl}">
             ${ICONS.close}
             Close
           </button>
-          ${dupeButton}
         </div>
       </div>
     </article>`;
