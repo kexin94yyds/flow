@@ -1768,6 +1768,22 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  // ---- Open a saved app tile ----
+  if (action === 'open-deferred-tab') {
+    const tabUrl = actionEl.dataset.tabUrl;
+    if (!tabUrl) return;
+
+    const allTabs = await chrome.tabs.query({});
+    const match = allTabs.find(t => t.url === tabUrl);
+    if (match) {
+      await chrome.tabs.update(match.id, { active: true });
+      await chrome.windows.update(match.windowId, { focused: true });
+    } else {
+      await chrome.tabs.create({ url: tabUrl, active: true });
+    }
+    return;
+  }
+
   // ---- Close a single tab ----
   if (action === 'close-single-tab') {
     e.stopPropagation(); // don't trigger parent chip's focus-tab
@@ -1785,6 +1801,7 @@ document.addEventListener('click', async (e) => {
     // Animate the chip row/card out
     const chip = actionEl.closest('.page-chip');
     const previewCard = actionEl.closest('.link-preview-card');
+    const openTabItem = actionEl.closest('.open-tab-item');
     if (chip) {
       const rect = chip.getBoundingClientRect();
       shootConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -1812,12 +1829,20 @@ document.addEventListener('click', async (e) => {
         renderDashboard();
       }, 250);
     }
+    if (openTabItem) {
+      openTabItem.classList.add('removing');
+      setTimeout(() => {
+        openTabItem.remove();
+        renderDashboard();
+      }, 300);
+    }
 
     // Update footer
     const statTabs = document.getElementById('statTabs');
     if (statTabs) statTabs.textContent = openTabs.length;
 
     showToast('Tab closed');
+    if (!chip && !previewCard && !openTabItem) await renderDashboard();
     return;
   }
 
@@ -1846,6 +1871,7 @@ document.addEventListener('click', async (e) => {
     // Animate chip/card out
     const chip = actionEl.closest('.page-chip');
     const previewCard = actionEl.closest('.link-preview-card');
+    const openTabItem = actionEl.closest('.open-tab-item');
     if (chip) {
       chip.style.transition = 'opacity 0.2s, transform 0.2s';
       chip.style.opacity    = '0';
@@ -1859,9 +1885,16 @@ document.addEventListener('click', async (e) => {
         renderDashboard();
       }, 250);
     }
+    if (openTabItem) {
+      openTabItem.classList.add('removing');
+      setTimeout(() => {
+        openTabItem.remove();
+        renderDashboard();
+      }, 300);
+    }
 
     showToast('Saved for later');
-    await renderDeferredColumn();
+    if (!previewCard && !openTabItem) await renderDashboard();
     return;
   }
 
@@ -1886,15 +1919,23 @@ document.addEventListener('click', async (e) => {
 
     // Animate: strikethrough first, then slide out
     const item = actionEl.closest('.deferred-item');
+    const savedCard = actionEl.closest('.saved-preview-card');
     if (item) {
       item.classList.add('checked');
       setTimeout(() => {
         item.classList.add('removing');
         setTimeout(() => {
           item.remove();
-          renderDeferredColumn(); // refresh counts and archive
+          renderDashboard(); // refresh counts and archive
         }, 300);
       }, 800);
+    }
+    if (savedCard) {
+      savedCard.classList.add('closing');
+      setTimeout(() => {
+        savedCard.remove();
+        renderDashboard();
+      }, 250);
     }
     return;
   }
@@ -1907,12 +1948,20 @@ document.addEventListener('click', async (e) => {
     await dismissSavedTab(id);
 
     const item = actionEl.closest('.deferred-item');
+    const savedCard = actionEl.closest('.saved-preview-card');
     if (item) {
       item.classList.add('removing');
       setTimeout(() => {
         item.remove();
-        renderDeferredColumn();
+        renderDashboard();
       }, 300);
+    }
+    if (savedCard) {
+      savedCard.classList.add('closing');
+      setTimeout(() => {
+        savedCard.remove();
+        renderDashboard();
+      }, 250);
     }
     return;
   }
