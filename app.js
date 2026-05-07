@@ -34,7 +34,7 @@ document.addEventListener('error', (event) => {
 // All open tabs — populated by fetchOpenTabs()
 let openTabs = [];
 
-const LINK_PREVIEW_CACHE_KEY = 'link_previews_v3';
+const LINK_PREVIEW_CACHE_KEY = 'link_previews_v4';
 const LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 const LINK_PREVIEW_MISS_MAX_AGE = 1000 * 60 * 60 * 12;
 const LINK_PREVIEW_TIMEOUT_MS = 5000;
@@ -1036,22 +1036,56 @@ function isXStatusUrl(url) {
   }
 }
 
+function getXUsername(url) {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.replace(/^www\./, '');
+    if (hostname !== 'x.com' && hostname !== 'twitter.com') return '';
+    const [username] = parsed.pathname.split('/').filter(Boolean);
+    if (!username || username === 'i' || username === 'intent' || username === 'share') return '';
+    return username;
+  } catch {
+    return '';
+  }
+}
+
+function normalizeExtractedImageUrl(value) {
+  const decoded = decodeJsonStringValue(value || '')
+    .replace(/\\u002F/g, '/')
+    .replace(/\\\//g, '/')
+    .replace(/&amp;/g, '&');
+  return decoded.startsWith('http://') || decoded.startsWith('https://') ? decoded : '';
+}
+
+function getFirstExtractedImageUrl(html, patterns) {
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    const url = normalizeExtractedImageUrl(match?.[1] || match?.[0] || '');
+    if (url) return url;
+  }
+  return '';
+}
+
 function extractXImageUrl(html, url) {
   if (!isXStatusUrl(url) || !html) return '';
 
   // X often omits tweet media from OG tags and places it in INITIAL_STATE.
-  const patterns = [
+  const mediaUrl = getFirstExtractedImageUrl(html, [
     /"media_url_https"\s*:\s*"([^"]+)"/,
     /"media_url"\s*:\s*"([^"]+)"/,
-  ];
+    /https?:\\\/\\\/pbs\.twimg\.com\\\/media\\\/[^"\\]+/,
+    /https?:\/\/pbs\.twimg\.com\/media\/[^"'<>\s]+/,
+  ]);
+  if (mediaUrl) return mediaUrl;
 
-  for (const pattern of patterns) {
-    const match = html.match(pattern);
-    const mediaUrl = match ? decodeJsonStringValue(match[1]) : '';
-    if (mediaUrl.startsWith('http://') || mediaUrl.startsWith('https://')) {
-      return mediaUrl;
-    }
-  }
+  const profileImageUrl = getFirstExtractedImageUrl(html, [
+    /"profile_image_url_https"\s*:\s*"([^"]+)"/,
+    /"profile_image_url"\s*:\s*"([^"]+)"/,
+  ]).replace('_normal.', '_400x400.');
+  if (profileImageUrl) return profileImageUrl;
+
+  const username = getXUsername(url);
+  if (username) return `https://unavatar.io/twitter/${encodeURIComponent(username)}`;
 
   return '';
 }
@@ -1132,9 +1166,12 @@ async function ensureLinkPreview(tab) {
   linkPreviewRequests.add(tab.url);
   try {
     const preview = await fetchLinkPreview(tab);
-    linkPreviewCache[tab.url] = preview;
-    linkPreviewCacheLoaded = true;
-    scheduleLinkPreviewCacheSave();
+    const shouldCachePreview = preview.fetched && (preview.imageUrl || !isXStatusUrl(tab.url));
+    if (shouldCachePreview) {
+      linkPreviewCache[tab.url] = preview;
+      linkPreviewCacheLoaded = true;
+      scheduleLinkPreviewCacheSave();
+    }
     updatePreviewCard(tab, preview);
   } finally {
     linkPreviewRequests.delete(tab.url);
