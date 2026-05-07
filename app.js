@@ -1185,10 +1185,7 @@ function getTabAccessTimestamp(tab) {
   return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : 0;
 }
 
-function formatTabCardTime(tab) {
-  const timestamp = getTabAccessTimestamp(tab);
-  if (!timestamp) return '';
-
+function formatCompactTimeBadge(timestamp) {
   const diff = Math.max(0, Date.now() - timestamp);
   const minutes = Math.floor(diff / 60000);
   if (minutes < 1) return 'now';
@@ -1206,11 +1203,40 @@ function formatTabCardTime(tab) {
   });
 }
 
+function formatTabCardTime(tab) {
+  const timestamp = getTabAccessTimestamp(tab);
+  return timestamp ? formatCompactTimeBadge(timestamp) : '';
+}
+
 function formatTabCardTimeTitle(tab) {
   const timestamp = getTabAccessTimestamp(tab);
   if (!timestamp) return '';
 
   return `Last viewed ${new Date(timestamp).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })}`;
+}
+
+function savedItemToPreviewTab(item) {
+  return {
+    url: item.url || '',
+    title: item.title || item.url || '',
+  };
+}
+
+function formatSavedCardTime(item) {
+  const timestamp = Date.parse(item?.savedAt || '');
+  return Number.isFinite(timestamp) ? formatCompactTimeBadge(timestamp) : '';
+}
+
+function formatSavedCardTimeTitle(item) {
+  const timestamp = Date.parse(item?.savedAt || '');
+  if (!Number.isFinite(timestamp)) return '';
+
+  return `Saved ${new Date(timestamp).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: 'numeric',
@@ -1257,6 +1283,42 @@ function renderTabPreviewCard(tab, urlCounts) {
     </article>`;
 }
 
+function renderSavedPreviewCard(item) {
+  const tab = savedItemToPreviewTab(item);
+  const preview = previewForTab(tab);
+  const domain = domainFromUrl(item.url);
+  const title = preview.title || item.title || item.url;
+  const faviconUrl = preview.faviconUrl || fallbackFaviconUrl(item.url);
+  const safeUrl = escapeHtml(item.url || '');
+  const safeTitle = escapeHtml(title);
+  const savedTime = formatSavedCardTime(item);
+  const savedTimeTitle = formatSavedCardTimeTitle(item);
+
+  return `
+    <article class="link-preview-card app-tile saved-preview-card" id="${previewCardId(tab)}" data-action="open-deferred-tab" data-tab-url="${safeUrl}" role="button" tabindex="0" aria-label="${safeTitle}">
+      ${renderPreviewMedia(preview, title)}
+      <div class="preview-card-body">
+        <div class="preview-domain">
+          ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" data-hide-on-error="true" loading="lazy" decoding="async">` : ''}
+          <span>${escapeHtml(domain || 'Saved')}</span>
+          <span class="preview-domain-spacer"></span>
+          ${savedTime ? `<span class="preview-time" title="${escapeHtml(savedTimeTitle)}">${escapeHtml(savedTime)}</span>` : ''}
+        </div>
+        <h3 class="preview-title" title="${safeTitle}">${safeTitle}</h3>
+        <div class="preview-actions">
+          <button class="action-btn save-tabs" data-action="check-deferred" data-deferred-id="${escapeHtml(item.id)}">
+            ${ICONS.check}
+            Done
+          </button>
+          <button class="action-btn close-tabs" data-action="dismiss-deferred" data-deferred-id="${escapeHtml(item.id)}">
+            ${ICONS.close}
+            Remove
+          </button>
+        </div>
+      </div>
+    </article>`;
+}
+
 function updatePreviewCard(tab, preview) {
   const card = document.getElementById(previewCardId(tab));
   if (!card) return;
@@ -1277,7 +1339,7 @@ function updatePreviewCard(tab, preview) {
   if (faviconEl && preview.faviconUrl) faviconEl.setAttribute('src', preview.faviconUrl);
 }
 
-function renderOpenTabsAsPreviewCards(realTabs) {
+async function renderSavedTabsAsPreviewCards() {
   const openTabsSection = document.getElementById('openTabsSection');
   const openTabsMissionsEl = document.getElementById('openTabsMissions');
   const openTabsSectionCount = document.getElementById('openTabsSectionCount');
@@ -1287,22 +1349,93 @@ function renderOpenTabsAsPreviewCards(realTabs) {
 
   openTabsMissionsEl.classList.add('link-preview-grid');
 
+  const { active } = await getSavedTabs();
+
+  if (active.length === 0) {
+    openTabsMissionsEl.innerHTML = `
+      <div class="missions-empty-state saved-empty-state">
+        <div class="empty-title">Nothing saved yet.</div>
+        <div class="empty-subtitle">Save a tab and it will live here like an app.</div>
+      </div>
+    `;
+    if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Saved apps';
+    if (openTabsSectionCount) openTabsSectionCount.textContent = '';
+    openTabsSection.style.display = 'block';
+    return;
+  }
+
+  if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Saved apps';
+  if (openTabsSectionCount) {
+    openTabsSectionCount.textContent = `${active.length} saved`;
+  }
+  openTabsMissionsEl.innerHTML = active.map(item => renderSavedPreviewCard(item)).join('');
+  openTabsSection.style.display = 'block';
+}
+
+function renderOpenTabItem(tab, urlCounts) {
+  const domain = domainFromUrl(tab.url);
+  const title = tab.title || tab.url || 'Untitled';
+  const faviconUrl = tab.favIconUrl || fallbackFaviconUrl(tab.url);
+  const safeUrl = escapeHtml(tab.url || '');
+  const safeTitle = escapeHtml(title);
+  const tabTime = formatTabCardTime(tab);
+  const count = urlCounts[tab.url] || 1;
+
+  return `
+    <div class="deferred-item open-tab-item" data-tab-url="${safeUrl}">
+      <button class="open-tab-favicon" data-action="focus-tab" data-tab-url="${safeUrl}" title="Open tab">
+        ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" data-hide-on-error="true" loading="lazy" decoding="async">` : ''}
+      </button>
+      <div class="deferred-info">
+        <button class="deferred-title text" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">${safeTitle}</button>
+        <div class="deferred-meta">
+          <span>${escapeHtml(domain || 'Open tab')}</span>
+          ${tabTime ? `<span>${escapeHtml(tabTime)}</span>` : ''}
+          ${count > 1 ? `<span>${count}x</span>` : ''}
+        </div>
+      </div>
+      <button class="deferred-action-icon" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save to Flow">
+        ${ICONS.archive}
+      </button>
+      <button class="deferred-dismiss" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close tab">
+        ${ICONS.close}
+      </button>
+    </div>`;
+}
+
+function renderOpenTabsColumn(realTabs) {
+  const column = document.getElementById('deferredColumn');
+  const list = document.getElementById('deferredList');
+  const empty = document.getElementById('deferredEmpty');
+  const countEl = document.getElementById('deferredCount');
+  const archiveEl = document.getElementById('deferredArchive');
+  const heading = column?.querySelector('.section-header h2');
+
+  if (!column || !list || !empty) return;
+
+  column.style.display = 'block';
+  if (heading) heading.textContent = 'Open tabs';
+  if (archiveEl) archiveEl.style.display = 'none';
+
   if (realTabs.length === 0) {
-    openTabsSection.style.display = 'none';
+    list.style.display = 'none';
+    empty.textContent = 'No open tabs.';
+    empty.style.display = 'block';
+    if (countEl) countEl.textContent = '';
     return;
   }
 
   const urlCounts = {};
   for (const tab of realTabs) urlCounts[tab.url] = (urlCounts[tab.url] || 0) + 1;
-  const duplicates = Object.values(urlCounts).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
   const displayTabs = uniqueTabsByUrl(realTabs);
+  const duplicates = Object.values(urlCounts).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
 
-  if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open apps';
-  if (openTabsSectionCount) {
-    openTabsSectionCount.innerHTML = `${realTabs.length} app${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` &nbsp;&middot;&nbsp; ${duplicates} duplicate${duplicates !== 1 ? 's' : ''}` : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
+  if (countEl) {
+    countEl.textContent = `${realTabs.length} tab${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` · ${duplicates} dupes` : ''}`;
   }
-  openTabsMissionsEl.innerHTML = displayTabs.map(tab => renderTabPreviewCard(tab, urlCounts)).join('');
-  openTabsSection.style.display = 'block';
+  list.innerHTML = displayTabs.map(tab => renderOpenTabItem(tab, urlCounts)).join('');
+  list.style.display = 'block';
+  empty.style.display = 'none';
 }
 
 
