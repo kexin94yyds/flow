@@ -1298,6 +1298,9 @@ function renderSavedPreviewCard(item) {
 
   return `
     <article class="link-preview-card app-tile saved-preview-card" id="${previewCardId(tab)}" data-action="open-deferred-tab" data-tab-url="${safeUrl}" role="button" tabindex="0" aria-label="${safeTitle}">
+      <button class="saved-card-remove" data-action="dismiss-deferred" data-deferred-id="${escapeHtml(item.id)}" title="Remove">
+        ${ICONS.close}
+      </button>
       ${renderPreviewMedia(preview, title)}
       <div class="preview-card-body">
         <div class="preview-domain">
@@ -1307,16 +1310,6 @@ function renderSavedPreviewCard(item) {
           ${savedTime ? `<span class="preview-time" title="${escapeHtml(savedTimeTitle)}">${escapeHtml(savedTime)}</span>` : ''}
         </div>
         <h3 class="preview-title" title="${safeTitle}">${safeTitle}</h3>
-        <div class="preview-actions">
-          <button class="action-btn save-tabs" data-action="check-deferred" data-deferred-id="${escapeHtml(item.id)}">
-            ${ICONS.check}
-            Done
-          </button>
-          <button class="action-btn close-tabs" data-action="dismiss-deferred" data-deferred-id="${escapeHtml(item.id)}">
-            ${ICONS.close}
-            Remove
-          </button>
-        </div>
       </div>
     </article>`;
 }
