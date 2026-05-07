@@ -259,7 +259,7 @@ body::before {
   border-radius: 999px;
   background: rgba(255, 253, 249, 0.94);
   color: rgba(26, 22, 19, 0.60);
-  opacity: 1;
+  opacity: 0;
   cursor: pointer;
   padding: 0;
   box-shadow: 0 2px 8px rgba(26, 22, 19, 0.08);
@@ -1295,6 +1295,35 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 .deferred-action-icon svg {
   width: 14px;
   height: 14px;
+}
+
+.open-tab-save-btn {
+  min-height: 22px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid rgba(90, 122, 98, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.70);
+  color: var(--accent-sage);
+  cursor: pointer;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.open-tab-save-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.open-tab-save-btn:hover {
+  background: rgba(90, 122, 98, 0.10);
+  border-color: rgba(90, 122, 98, 0.34);
+  transform: translateY(-1px);
 }
 
 /* Slide-out animation for items being removed */
