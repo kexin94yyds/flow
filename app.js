@@ -360,7 +360,7 @@ function previewForTab(tab) {
   }
 
   const cleanedTitle = stripTitleNoise(tab?.title || '');
-  const smart = smartTitle(cleanedTitle(cleanedTitle || rawUrl, hostname), rawUrl);
+  const smart = smartTitle(cleanTitle(cleanedTitle || rawUrl, hostname), rawUrl);
   return {
     url: rawUrl,
     title: smart || rawUrl || 'Untitled',
