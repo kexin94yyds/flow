@@ -209,8 +209,8 @@ body::before {
 .missions.link-preview-grid {
   columns: initial;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
   align-items: stretch;
 }
 
@@ -222,10 +222,10 @@ body::before {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  min-height: 214px;
+  min-height: 174px;
   contain: layout paint;
   content-visibility: auto;
-  contain-intrinsic-size: 150px 214px;
+  contain-intrinsic-size: 120px 174px;
   box-shadow: 0 2px 14px var(--shadow);
   transition: box-shadow 0.25s ease, transform 0.25s ease, opacity 0.25s ease;
 }
@@ -244,7 +244,7 @@ body::before {
 .preview-media {
   position: relative;
   flex: 1 1 auto;
-  min-height: 72px;
+  min-height: 58px;
   background: linear-gradient(135deg, rgba(90, 122, 98, 0.10), rgba(200, 113, 58, 0.08));
   overflow: hidden;
   cursor: pointer;
@@ -282,20 +282,20 @@ body::before {
 }
 
 .preview-card-body {
-  padding: 8px;
+  padding: 7px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
   flex: 1;
-  min-height: 112px;
+  min-height: 88px;
 }
 
 .preview-domain {
   display: flex;
   align-items: center;
-  gap: 5px;
-  min-height: 14px;
-  font-size: 8px;
+  gap: 4px;
+  min-height: 12px;
+  font-size: 7px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -303,8 +303,8 @@ body::before {
 }
 
 .preview-domain img {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -319,14 +319,14 @@ body::before {
 
 .preview-title {
   font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.2;
   color: var(--ink);
   cursor: pointer;
   display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
+  line-clamp: 1;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -336,32 +336,29 @@ body::before {
 }
 
 .preview-description {
-  font-size: 10px;
-  line-height: 1.3;
-  color: var(--muted);
-  display: -webkit-box;
-  line-clamp: 1;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 0;
+  display: none;
 }
 
 .preview-actions {
   margin-top: auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding-top: 2px;
+  gap: 3px;
+  padding-top: 1px;
 }
 
 .preview-actions .action-btn {
-  min-height: 24px;
+  min-height: 20px;
   min-width: 0;
   justify-content: center;
-  padding-inline: 5px;
-  font-size: 8px;
-  gap: 3px;
+  padding-inline: 4px;
+  font-size: 7px;
+  gap: 2px;
+}
+
+.preview-actions .action-btn svg {
+  width: 10px;
+  height: 10px;
 }
 
 .mission-card {
