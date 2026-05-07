@@ -1188,9 +1188,6 @@ function renderTabPreviewCard(tab, urlCounts) {
   const safeUrl = escapeHtml(tab.url || '');
   const safeTitle = escapeHtml(title);
   const count = urlCounts[tab.url] || 1;
-  const dupeButton = count > 1
-    ? `<button class="action-btn" data-action="dedup-keep-one" data-dupe-urls="${encodeURIComponent(tab.url)}">Close ${count - 1} duplicate${count - 1 !== 1 ? 's' : ''}</button>`
-    : '';
 
   return `
     <article class="link-preview-card app-tile" id="${previewCardId(tab)}" data-action="focus-tab" data-tab-url="${safeUrl}" role="button" tabindex="0" aria-label="${safeTitle}">
