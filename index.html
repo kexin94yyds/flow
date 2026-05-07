@@ -14,20 +14,13 @@
 <body>
 <div class="container">
 
-
-
   <!-- ================================================================
-       HEADER — greeting on the left
+       HEADER — title only
        ================================================================ -->
-  <header>
+  <header class="launcher-header">
     <div class="header-left">
-      <!-- "Good afternoon" — written by getGreeting() in app.js -->
       <h1 id="greeting"></h1>
-      <!-- "Friday, April 4, 2026" — written by getDateDisplay() in app.js -->
       <div class="date" id="dateDisplay"></div>
-    </div>
-    <div class="header-actions">
-      <a class="dashboard-link" href="flow.html?mode=web">Flow</a>
     </div>
   </header>
 
@@ -69,28 +62,16 @@
       </div>
     </section>
 
-    <!-- LEFT COLUMN: Open tabs -->
     <div class="active-section" id="openTabsSection" style="display:none">
-      <div class="section-header">
-        <h2 id="openTabsSectionTitle">Right now</h2>
-        <div class="section-line"></div>
-        <div class="section-count" id="openTabsSectionCount"></div>
-      </div>
       <div class="missions" id="openTabsMissions"></div>
     </div>
 
   </div><!-- end .launcher-shell -->
 
   <!-- ================================================================
-       FOOTER — global stats + refresh control
+       FOOTER — subtle attribution only
        ================================================================ -->
   <footer>
-    <div class="footer-stats">
-      <div class="stat">
-        <div class="stat-num" id="statTabs">—</div>
-        <div class="stat-label">Open tabs</div>
-      </div>
-    </div>
     <div class="last-refresh">
       <span style="color: var(--muted); font-size: 11px;"><a href="https://github.com/zarazhangrui/tab-out" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Tab Out</a> by <a href="https://x.com/zarazhangrui" target="_top" style="color: var(--muted); text-decoration: underline; text-underline-offset: 2px;">Zara</a></span>
     </div>

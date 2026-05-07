@@ -1260,17 +1260,15 @@ function renderTabPreviewCard(tab, urlCounts) {
     : '';
 
   return `
-    <article class="link-preview-card" id="${previewCardId(tab)}">
-      <div data-action="focus-tab" data-tab-url="${safeUrl}">
-        ${renderPreviewMedia(preview, title)}
-      </div>
+    <article class="link-preview-card app-tile" id="${previewCardId(tab)}" data-action="focus-tab" data-tab-url="${safeUrl}" role="button" tabindex="0" aria-label="${safeTitle}">
+      ${renderPreviewMedia(preview, title)}
       <div class="preview-card-body">
         <div class="preview-domain">
           ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" data-hide-on-error="true">` : ''}
           <span>${escapeHtml(domain || 'Open tab')}</span>
           ${count > 1 ? `<span class="preview-dupe">${count}x</span>` : ''}
         </div>
-        <h3 class="preview-title" data-action="focus-tab" data-tab-url="${safeUrl}" title="${safeTitle}">${safeTitle}</h3>
+        <h3 class="preview-title" title="${safeTitle}">${safeTitle}</h3>
         <p class="preview-description">${escapeHtml(description)}</p>
         <div class="preview-actions">
           <button class="action-btn primary" data-action="focus-tab" data-tab-url="${safeUrl}">
@@ -1321,7 +1319,7 @@ function renderOpenTabsAsPreviewCards(realTabs) {
   const openTabsSectionCount = document.getElementById('openTabsSectionCount');
   const openTabsSectionTitle = document.getElementById('openTabsSectionTitle');
 
-  if (!openTabsSection || !openTabsMissionsEl || !openTabsSectionCount) return;
+  if (!openTabsSection || !openTabsMissionsEl) return;
 
   openTabsMissionsEl.classList.add('link-preview-grid');
 
@@ -1334,8 +1332,10 @@ function renderOpenTabsAsPreviewCards(realTabs) {
   for (const tab of realTabs) urlCounts[tab.url] = (urlCounts[tab.url] || 0) + 1;
   const duplicates = Object.values(urlCounts).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
 
-  if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open tabs';
-  openTabsSectionCount.innerHTML = `${realTabs.length} tab${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` &nbsp;&middot;&nbsp; ${duplicates} duplicate${duplicates !== 1 ? 's' : ''}` : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
+  if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open apps';
+  if (openTabsSectionCount) {
+    openTabsSectionCount.innerHTML = `${realTabs.length} app${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` &nbsp;&middot;&nbsp; ${duplicates} duplicate${duplicates !== 1 ? 's' : ''}` : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
+  }
   openTabsMissionsEl.innerHTML = realTabs.map(tab => renderTabPreviewCard(tab, urlCounts)).join('');
   openTabsSection.style.display = 'block';
 }
@@ -1466,24 +1466,20 @@ function renderArchiveItem(item) {
  * 6. Renders the "Saved for Later" checklist
  */
 async function renderStaticDashboard() {
-  // --- Header ---
-  const greetingEl = document.getElementById('greeting');
-  const dateEl     = document.getElementById('dateDisplay');
-  if (greetingEl) greetingEl.textContent = getGreeting();
-  if (dateEl)     dateEl.textContent     = getDateDisplay();
-
   // --- Fetch tabs ---
   await fetchOpenTabs();
   const realTabs = getRealTabs();
+
+  // --- Header ---
+  const greetingEl = document.getElementById('greeting');
+  const dateEl     = document.getElementById('dateDisplay');
+  if (greetingEl) greetingEl.textContent = 'Tab Out';
+  if (dateEl)     dateEl.textContent     = `${realTabs.length} open tab${realTabs.length !== 1 ? 's' : ''}`;
 
   // --- Render open tabs as ClipBook-style link preview cards ---
   await loadLinkPreviewCache();
   renderOpenTabsAsPreviewCards(realTabs);
   queueLinkPreviewFetches(realTabs);
-
-  // --- Footer stats ---
-  const statTabsEl = document.getElementById('statTabs');
-  if (statTabsEl) statTabsEl.textContent = openTabs.length;
 
   // --- Check for duplicate Tab Out tabs ---
   checkTabOutDupes();
@@ -1620,9 +1616,6 @@ async function renderStaticDashboard() {
   }
 
   // --- Footer stats ---
-  const statTabs = document.getElementById('statTabs');
-  if (statTabs) statTabs.textContent = openTabs.length;
-
   // --- Check for duplicate Tab Out tabs ---
   checkTabOutDupes();
 
