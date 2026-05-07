@@ -83,6 +83,7 @@ async function fetchOpenTabs() {
       id:       t.id,
       url:      t.url,
       title:    t.title,
+      favIconUrl: t.favIconUrl,
       windowId: t.windowId,
       active:   t.active,
       lastAccessed: typeof t.lastAccessed === 'number' ? t.lastAccessed : 0,
