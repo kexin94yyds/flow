@@ -209,8 +209,8 @@ body::before {
 .missions.link-preview-grid {
   columns: initial;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(182px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
   align-items: stretch;
 }
 
@@ -222,10 +222,10 @@ body::before {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  min-height: 290px;
+  min-height: 238px;
   contain: layout paint;
   content-visibility: auto;
-  contain-intrinsic-size: 280px 360px;
+  contain-intrinsic-size: 180px 238px;
   box-shadow: 0 2px 14px var(--shadow);
   transition: box-shadow 0.25s ease, transform 0.25s ease, opacity 0.25s ease;
 }
@@ -244,7 +244,7 @@ body::before {
 .preview-media {
   position: relative;
   flex: 1 1 auto;
-  min-height: 118px;
+  min-height: 86px;
   background: linear-gradient(135deg, rgba(90, 122, 98, 0.10), rgba(200, 113, 58, 0.08));
   overflow: hidden;
   cursor: pointer;
@@ -282,29 +282,29 @@ body::before {
 }
 
 .preview-card-body {
-  padding: 14px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
-  min-height: 160px;
+  min-height: 128px;
 }
 
 .preview-domain {
   display: flex;
   align-items: center;
-  gap: 7px;
-  min-height: 18px;
-  font-size: 10px;
+  gap: 6px;
+  min-height: 16px;
+  font-size: 9px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   font-weight: 600;
 }
 
 .preview-domain img {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -319,12 +319,13 @@ body::before {
 
 .preview-title {
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.3;
   color: var(--ink);
   cursor: pointer;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -335,10 +336,11 @@ body::before {
 }
 
 .preview-description {
-  font-size: 12px;
-  line-height: 1.45;
+  font-size: 11px;
+  line-height: 1.35;
   color: var(--muted);
   display: -webkit-box;
+  line-clamp: 1;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
@@ -347,24 +349,19 @@ body::before {
 
 .preview-actions {
   margin-top: auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
   padding-top: 4px;
 }
 
 .preview-actions .action-btn {
-  min-height: 30px;
-  flex: 1 1 calc(50% - 6px);
+  min-height: 26px;
+  min-width: 0;
   justify-content: center;
-  padding-inline: 10px;
-  font-size: 10px;
-}
-
-.preview-actions .flow-save {
-  color: var(--accent-slate);
-  border-color: rgba(90, 107, 122, 0.28);
-  background: rgba(90, 107, 122, 0.06);
+  padding-inline: 6px;
+  font-size: 9px;
+  gap: 4px;
 }
 
 .mission-card {
