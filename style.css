@@ -235,6 +235,53 @@ body::before {
   transform: translateY(-1px);
 }
 
+.saved-preview-card {
+  position: relative;
+  min-height: 150px;
+  contain-intrinsic-size: 120px 150px;
+}
+
+.saved-preview-card .preview-card-body {
+  min-height: 54px;
+}
+
+.saved-card-remove {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 253, 249, 0.78);
+  color: rgba(26, 22, 19, 0.42);
+  opacity: 0;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(26, 22, 19, 0.08);
+  transition: opacity 0.15s, color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.saved-card-remove svg {
+  width: 12px;
+  height: 12px;
+}
+
+.saved-preview-card:hover .saved-card-remove,
+.saved-card-remove:focus-visible {
+  opacity: 1;
+}
+
+.saved-card-remove:hover {
+  background: rgba(255, 253, 249, 0.96);
+  color: var(--status-abandoned);
+  transform: translateY(-1px);
+}
+
 .link-preview-card.closing {
   opacity: 0;
   transform: scale(0.96);
