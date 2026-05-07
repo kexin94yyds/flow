@@ -237,6 +237,27 @@ async function closeTabOutDupes() {
   await fetchOpenTabs();
 }
 
+function checkTabOutDupes() {
+  const banner = document.getElementById('tabOutDupeBanner');
+  const countEl = document.getElementById('tabOutDupeCount');
+  if (!banner || !countEl) return;
+
+  const extensionId = chrome.runtime.id;
+  const newtabUrl = `chrome-extension://${extensionId}/index.html`;
+
+  const dupeCount = openTabs.filter(tab => {
+    const url = tab.url || '';
+    return url === 'chrome://newtab/' || url === newtabUrl || url.startsWith(`${newtabUrl}?`);
+  }).length;
+
+  if (dupeCount > 1) {
+    countEl.textContent = String(dupeCount);
+    banner.style.display = 'flex';
+    return;
+  }
+
+  banner.style.display = 'none';
+}
 
 /* ----------------------------------------------------------------
    SAVED FOR LATER — chrome.storage.local
@@ -299,6 +320,56 @@ async function saveFlowItems(items) {
   }
 
   localStorage.setItem('flowItems', JSON.stringify(items));
+}
+
+function hashString(value) {
+  const input = String(value || '');
+  let hash = 0;
+  for (let index = 0; index < input.length; index += 1) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function domainFromUrl(url) {
+  if (!url) return '';
+  try {
+    if (url.startsWith('file://')) return friendlyDomain('local-files');
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    return friendlyDomain(hostname) || hostname;
+  } catch {
+    return '';
+  }
+}
+
+function previewCardId(tab) {
+  return `preview-card-${hashString(tab?.url || tab?.title || '')}`;
+}
+
+function previewForTab(tab) {
+  const cached = getCachedLinkPreview(tab?.url);
+  if (cached) return cached;
+
+  const rawUrl = tab?.url || '';
+  let hostname = '';
+  try {
+    hostname = rawUrl.startsWith('file://') ? 'local-files' : new URL(rawUrl).hostname;
+  } catch {
+    hostname = '';
+  }
+
+  const cleanedTitle = stripTitleNoise(tab?.title || '');
+  const smart = smartTitle(cleanedTitle(cleanedTitle || rawUrl, hostname), rawUrl);
+  return {
+    url: rawUrl,
+    title: smart || rawUrl || 'Untitled',
+    description: domainFromUrl(rawUrl) || rawUrl,
+    imageUrl: '',
+    faviconUrl: tab?.favIconUrl || fallbackFaviconUrl(rawUrl),
+    fetchedAt: 0,
+    fetched: false,
+  };
 }
 
 function inferFlowPlatform(url) {
