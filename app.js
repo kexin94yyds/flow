@@ -821,6 +821,16 @@ function getRealTabs() {
   });
 }
 
+function uniqueTabsByUrl(tabs) {
+  const byUrl = new Map();
+  for (const tab of tabs) {
+    if (!tab.url) continue;
+    const existing = byUrl.get(tab.url);
+    if (!existing || tab.active) byUrl.set(tab.url, tab);
+  }
+  return [...byUrl.values()];
+}
+
 function isPreviewableUrl(url) {
   return typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'));
 }
@@ -846,7 +856,6 @@ function getCachedLinkPreview(url) {
   const cached = linkPreviewCache[url];
   if (!cached) return null;
   if (!cached.fetchedAt || Date.now() - cached.fetchedAt > LINK_PREVIEW_MAX_AGE) return null;
-  if (!cached.imageUrl) return null;
   return cached;
 }
 
@@ -1017,7 +1026,7 @@ async function ensureLinkPreview(tab) {
 
   linkPreviewRequests.add(tab.url);
   const preview = await fetchLinkPreview(tab);
-  if (preview.fetched && preview.imageUrl) {
+  if (preview.fetched) {
     linkPreviewCache[tab.url] = preview;
     await saveLinkPreviewCache();
   }
@@ -1026,7 +1035,7 @@ async function ensureLinkPreview(tab) {
 }
 
 function queueLinkPreviewFetches(tabs) {
-  const previewable = tabs.filter(tab => isPreviewableUrl(tab.url));
+  const previewable = uniqueTabsByUrl(tabs).filter(tab => isPreviewableUrl(tab.url));
   previewable.forEach((tab, index) => {
     setTimeout(() => {
       ensureLinkPreview(tab);
@@ -1331,12 +1340,13 @@ function renderOpenTabsAsPreviewCards(realTabs) {
   const urlCounts = {};
   for (const tab of realTabs) urlCounts[tab.url] = (urlCounts[tab.url] || 0) + 1;
   const duplicates = Object.values(urlCounts).reduce((sum, count) => sum + Math.max(0, count - 1), 0);
+  const displayTabs = uniqueTabsByUrl(realTabs);
 
   if (openTabsSectionTitle) openTabsSectionTitle.textContent = 'Open apps';
   if (openTabsSectionCount) {
     openTabsSectionCount.innerHTML = `${realTabs.length} app${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` &nbsp;&middot;&nbsp; ${duplicates} duplicate${duplicates !== 1 ? 's' : ''}` : ''} &nbsp;&middot;&nbsp; <button class="action-btn close-tabs" data-action="close-all-open-tabs" style="font-size:11px;padding:3px 10px;">${ICONS.close} Close all ${realTabs.length} tabs</button>`;
   }
-  openTabsMissionsEl.innerHTML = realTabs.map(tab => renderTabPreviewCard(tab, urlCounts)).join('');
+  openTabsMissionsEl.innerHTML = displayTabs.map(tab => renderTabPreviewCard(tab, urlCounts)).join('');
   openTabsSection.style.display = 'block';
 }
 
