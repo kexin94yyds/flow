@@ -1407,9 +1407,6 @@ async function renderStaticDashboard() {
   renderOpenTabsAsPreviewCards(realTabs);
   queueLinkPreviewFetches(realTabs);
 
-  // --- Check for duplicate Tab Out tabs ---
-  checkTabOutDupes();
-
   // --- Render "Saved for Later" column ---
   await renderDeferredColumn();
   return;
@@ -1542,9 +1539,6 @@ async function renderStaticDashboard() {
   }
 
   // --- Footer stats ---
-  // --- Check for duplicate Tab Out tabs ---
-  checkTabOutDupes();
-
   // --- Render "Saved for Later" column ---
   await renderDeferredColumn();
 }
