@@ -45,28 +45,55 @@
   <!-- ================================================================
        APP LAUNCHER — every open link becomes a clickable app tile
        ================================================================ -->
-  <div class="launcher-shell" id="dashboardColumns">
-    <section class="launcher-toolbar" aria-label="Link launcher controls">
-      <div class="launcher-search">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-        </svg>
-        <input id="launcherSearch" type="search" placeholder="搜索标签页、站点或网址..." autocomplete="off">
-      </div>
-      <div class="launcher-filters" id="launcherFilters" aria-label="Link categories">
-        <button class="launcher-filter is-active" data-action="set-launcher-category" data-launcher-category="all" type="button">全部</button>
-        <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="work" type="button">工作</button>
-        <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="study" type="button">学习</button>
-        <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="media" type="button">媒体</button>
-        <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="tools" type="button">工具</button>
-      </div>
-    </section>
+  <div class="dashboard-columns" id="dashboardColumns">
+    <main class="launcher-shell">
+      <section class="launcher-toolbar" aria-label="Link launcher controls">
+        <div class="launcher-search">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+          </svg>
+          <input id="launcherSearch" type="search" placeholder="搜索标签页、站点或网址..." autocomplete="off">
+        </div>
+        <div class="launcher-filters" id="launcherFilters" aria-label="Link categories">
+          <button class="launcher-filter is-active" data-action="set-launcher-category" data-launcher-category="all" type="button">全部</button>
+          <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="work" type="button">工作</button>
+          <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="study" type="button">学习</button>
+          <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="media" type="button">媒体</button>
+          <button class="launcher-filter" data-action="set-launcher-category" data-launcher-category="tools" type="button">工具</button>
+        </div>
+      </section>
 
-    <div class="active-section" id="openTabsSection" style="display:none">
-      <div class="missions" id="openTabsMissions"></div>
-    </div>
+      <div class="active-section" id="openTabsSection" style="display:none">
+        <div class="missions" id="openTabsMissions"></div>
+      </div>
+    </main>
 
-  </div><!-- end .launcher-shell -->
+    <aside class="deferred-column" id="deferredColumn" style="display:none">
+      <div class="section-header">
+        <h2>Saved for later</h2>
+        <div class="section-line"></div>
+        <span class="section-count" id="deferredCount"></span>
+      </div>
+
+      <div class="deferred-list" id="deferredList"></div>
+      <div class="deferred-empty" id="deferredEmpty">Nothing saved yet.</div>
+
+      <div class="deferred-archive" id="deferredArchive" style="display:none">
+        <button class="archive-toggle" id="archiveToggle" type="button">
+          <svg class="archive-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+          <span>Archive</span>
+          <span class="archive-count" id="archiveCount"></span>
+        </button>
+        <div class="archive-body" id="archiveBody" style="display:none">
+          <input class="archive-search" id="archiveSearch" type="search" placeholder="Search archive..." autocomplete="off">
+          <div id="archiveList"></div>
+        </div>
+      </div>
+    </aside>
+
+  </div><!-- end .dashboard-columns -->
 
   <!-- ================================================================
        FOOTER — subtle attribution only
