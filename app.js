@@ -1201,10 +1201,6 @@ function renderTabPreviewCard(tab, urlCounts) {
         <h3 class="preview-title" title="${safeTitle}">${safeTitle}</h3>
         <p class="preview-description">${escapeHtml(description)}</p>
         <div class="preview-actions">
-          <button class="action-btn primary" data-action="focus-tab" data-tab-url="${safeUrl}">
-            ${ICONS.focus}
-            Open
-          </button>
           <button class="action-btn save-tabs" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}">
             ${ICONS.archive}
             Save
