@@ -85,6 +85,7 @@ async function fetchOpenTabs() {
       title:    t.title,
       windowId: t.windowId,
       active:   t.active,
+      lastAccessed: typeof t.lastAccessed === 'number' ? t.lastAccessed : 0,
       // Flag Tab Out's own pages so we can detect duplicate new tabs
       isTabOut: t.url === newtabUrl || t.url === 'chrome://newtab/',
     }));
@@ -1179,6 +1180,44 @@ function renderPreviewMedia(preview, title) {
     </div>`;
 }
 
+function getTabAccessTimestamp(tab) {
+  const timestamp = Number(tab?.lastAccessed || 0);
+  return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : 0;
+}
+
+function formatTabCardTime(tab) {
+  const timestamp = getTabAccessTimestamp(tab);
+  if (!timestamp) return '';
+
+  const diff = Math.max(0, Date.now() - timestamp);
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(diff / 86400000);
+  if (days < 7) return `${days}d`;
+
+  return new Date(timestamp).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function formatTabCardTimeTitle(tab) {
+  const timestamp = getTabAccessTimestamp(tab);
+  if (!timestamp) return '';
+
+  return `Last viewed ${new Date(timestamp).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })}`;
+}
+
 function renderTabPreviewCard(tab, urlCounts) {
   const preview = previewForTab(tab);
   const domain = domainFromUrl(tab.url);
@@ -1187,6 +1226,8 @@ function renderTabPreviewCard(tab, urlCounts) {
   const faviconUrl = preview.faviconUrl || tab.favIconUrl || fallbackFaviconUrl(tab.url);
   const safeUrl = escapeHtml(tab.url || '');
   const safeTitle = escapeHtml(title);
+  const tabTime = formatTabCardTime(tab);
+  const tabTimeTitle = formatTabCardTimeTitle(tab);
   const count = urlCounts[tab.url] || 1;
 
   return `
@@ -1196,6 +1237,8 @@ function renderTabPreviewCard(tab, urlCounts) {
         <div class="preview-domain">
           ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" data-hide-on-error="true" loading="lazy" decoding="async">` : ''}
           <span>${escapeHtml(domain || 'Open tab')}</span>
+          <span class="preview-domain-spacer"></span>
+          ${tabTime ? `<span class="preview-time" title="${escapeHtml(tabTimeTitle)}">${escapeHtml(tabTime)}</span>` : ''}
           ${count > 1 ? `<span class="preview-dupe">${count}x</span>` : ''}
         </div>
         <h3 class="preview-title" title="${safeTitle}">${safeTitle}</h3>

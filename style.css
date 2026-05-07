@@ -309,12 +309,32 @@ body::before {
   flex-shrink: 0;
 }
 
+.preview-domain-spacer {
+  flex: 1;
+  min-width: 2px;
+}
+
+.preview-time {
+  flex-shrink: 0;
+  max-width: 34px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--accent-slate);
+  background: rgba(90, 107, 122, 0.10);
+  border-radius: 999px;
+  padding: 1px 4px;
+  font-size: 7px;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .preview-dupe {
   color: var(--accent-amber);
   background: rgba(200, 113, 58, 0.09);
   border-radius: 3px;
   padding: 1px 6px;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .preview-title {
