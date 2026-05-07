@@ -1390,8 +1390,9 @@ function renderOpenTabItem(tab, urlCounts) {
           ${count > 1 ? `<span>${count}x</span>` : ''}
         </div>
       </div>
-      <button class="deferred-action-icon" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save to Flow">
+      <button class="open-tab-save-btn" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save to Flow">
         ${ICONS.archive}
+        <span>Save</span>
       </button>
       <button class="deferred-dismiss" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close tab">
         ${ICONS.close}
