@@ -1395,7 +1395,7 @@ async function renderStaticDashboard() {
   // --- Header ---
   const greetingEl = document.getElementById('greeting');
   const dateEl     = document.getElementById('dateDisplay');
-  if (greetingEl) greetingEl.textContent = 'Tab Out';
+  if (greetingEl) greetingEl.textContent = 'Flow';
   if (dateEl)     dateEl.textContent     = `${realTabs.length} open tab${realTabs.length !== 1 ? 's' : ''}`;
 
   // --- Render open tabs as ClipBook-style link preview cards ---
