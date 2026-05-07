@@ -1066,6 +1066,11 @@ function getFirstExtractedImageUrl(html, patterns) {
   return '';
 }
 
+function getXFallbackImageUrl(url) {
+  const username = getXUsername(url);
+  return username ? `https://unavatar.io/twitter/${encodeURIComponent(username)}` : '';
+}
+
 function extractXImageUrl(html, url) {
   if (!isXStatusUrl(url) || !html) return '';
 
@@ -1084,10 +1089,7 @@ function extractXImageUrl(html, url) {
   ]).replace('_normal.', '_400x400.');
   if (profileImageUrl) return profileImageUrl;
 
-  const username = getXUsername(url);
-  if (username) return `https://unavatar.io/twitter/${encodeURIComponent(username)}`;
-
-  return '';
+  return getXFallbackImageUrl(url);
 }
 
 async function fetchLinkPreview(tab) {
@@ -1097,7 +1099,7 @@ async function fetchLinkPreview(tab) {
     url,
     title: fallbackTitle,
     description: '',
-    imageUrl: '',
+    imageUrl: getXFallbackImageUrl(url),
     faviconUrl: tab.favIconUrl || fallbackFaviconUrl(url),
     fetchedAt: Date.now(),
     fetched: false,
