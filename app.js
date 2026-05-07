@@ -367,7 +367,7 @@ function previewForTab(tab) {
     url: rawUrl,
     title: smart || rawUrl || 'Untitled',
     description: domainFromUrl(rawUrl) || rawUrl,
-    imageUrl: '',
+    imageUrl: getXFallbackImageUrl(rawUrl),
     faviconUrl: tab?.favIconUrl || fallbackFaviconUrl(rawUrl),
     fetchedAt: 0,
     fetched: false,
