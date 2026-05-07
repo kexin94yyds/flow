@@ -1569,20 +1569,18 @@ async function renderStaticDashboard() {
   // --- Fetch tabs ---
   await fetchOpenTabs();
   const realTabs = getRealTabs();
+  const savedTabs = await getSavedTabs();
 
   // --- Header ---
   const greetingEl = document.getElementById('greeting');
-  const dateEl     = document.getElementById('dateDisplay');
+  const dateEl     = document.getElementById('dateDisplay') || document.getElementById('date');
   if (greetingEl) greetingEl.textContent = 'Flow';
-  if (dateEl)     dateEl.textContent     = `${realTabs.length} open tab${realTabs.length !== 1 ? 's' : ''}`;
+  if (dateEl)     dateEl.textContent     = `${savedTabs.active.length} saved · ${realTabs.length} open`;
 
-  // --- Render open tabs as ClipBook-style link preview cards ---
+  // --- Render saved items as app-style cards, with open tabs in the side rail ---
   await loadLinkPreviewCache();
-  renderOpenTabsAsPreviewCards(realTabs);
-  queueLinkPreviewFetches(realTabs);
-
-  // --- Render "Saved for Later" column ---
-  await renderDeferredColumn();
+  await renderSavedTabsAsPreviewCards(savedTabs.active);
+  renderOpenTabsColumn(realTabs);
   return;
 
   // --- Group tabs by domain ---
