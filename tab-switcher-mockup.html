@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flow / Tab Out Switch Mockup</title>
+  <style>
+    :root {
+      --paper: #f8f5f0;
+      --ink: #1b1714;
+      --muted: #9b928a;
+      --line: #e8e1d9;
+      --card: #fffdf8;
+      --active: #ffffff;
+      --shadow: rgba(38, 30, 22, 0.11);
+      --inner: rgba(38, 30, 22, 0.16);
+      --blue: #2f6fed;
+      --sage: #557866;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 26% 12%, rgba(255,255,255,0.9), transparent 34%),
+        linear-gradient(135deg, #fbf8f3, var(--paper));
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    .page {
+      position: relative;
+      min-height: 100vh;
+      padding: 48px 46px 84px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 34px;
+    }
+
+    .brand h1 {
+      margin: 0 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 56px;
+      line-height: 0.9;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      width: min(420px, 38vw);
+      min-width: 316px;
+      padding: 5px;
+      border: 1px solid rgba(154, 145, 138, 0.32);
+      border-radius: 18px;
+      background: rgba(255, 253, 248, 0.68);
+      box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.8),
+        0 18px 42px rgba(38, 30, 22, 0.08);
+      backdrop-filter: blur(18px);
+    }
+
+    .mode-button {
+      border: 0;
+      min-height: 50px;
+      border-radius: 13px;
+      background: transparent;
+      color: rgba(27, 23, 20, 0.58);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .mode-button svg {
+      width: 19px;
+      height: 19px;
+      flex: 0 0 auto;
+    }
+
+    .mode-button[aria-pressed="true"] {
+      color: var(--ink);
+      background: var(--active);
+      box-shadow:
+        inset 0 2px 7px rgba(38, 30, 22, 0.13),
+        inset 0 -1px 0 rgba(255,255,255,0.9),
+        0 1px 2px rgba(38, 30, 22, 0.08);
+      transform: translateY(1px);
+    }
+
+    .mode-button:not([aria-pressed="true"]):hover {
+      color: var(--ink);
+      background: rgba(255,255,255,0.46);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 62px;
+      align-items: start;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(148px, 1fr));
+      gap: 18px;
+      max-width: 1160px;
+    }
+
+    .tile {
+      min-height: 214px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--card);
+      box-shadow: 0 7px 22px rgba(38, 30, 22, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tile-media {
+      height: 108px;
+      background: #eee9e2;
+      display: grid;
+      place-items: center;
+      color: #b7aea5;
+    }
+
+    .tile-media.blue {
+      background: linear-gradient(135deg, #78a7cc, #2f7aab);
+      color: white;
+    }
+
+    .tile-media.green {
+      background: linear-gradient(135deg, #ccddd2, #9db9aa);
+      color: #24392f;
+    }
+
+    .tile-body {
+      padding: 13px 14px 16px;
+    }
+
+    .tile-kicker {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tile-title {
+      font-size: 18px;
+      line-height: 1.18;
+      font-weight: 800;
+    }
+
+    .rail {
+      min-height: 420px;
+      padding-top: 22px;
+    }
+
+    .rail-head {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      color: var(--muted);
+      margin-bottom: 34px;
+    }
+
+    .rail-head em {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .rail-line {
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .rail-count {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .open-row {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+    }
+
+    .icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: #e7f0f8;
+      color: #24618a;
+      font-weight: 900;
+    }
+
+    .open-title {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .open-meta {
+      color: var(--muted);
+      margin-top: 3px;
+      font-size: 14px;
+    }
+
+    .save-pill {
+      border: 1px solid rgba(85, 120, 102, 0.26);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+      color: var(--sage);
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .bottom-ghost {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 52px;
+      background: rgba(240, 244, 255, 0.72);
+      display: grid;
+      place-items: center;
+      color: #1f2937;
+      font-size: 14px;
+      text-decoration: underline;
+    }
+
+    .flow-panel,
+    .tabout-panel {
+      display: none;
+    }
+
+    body[data-mode="flow"] .flow-panel,
+    body[data-mode="tabout"] .tabout-panel {
+      display: contents;
+    }
+
+    body[data-mode="tabout"] .brand h1::after {
+      content: " Tab Out";
+      color: rgba(27, 23, 20, 0.22);
+      font-size: 0.58em;
+      font-family: "DM Sans", sans-serif;
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+      .page { padding: 28px 18px 84px; }
+      .topbar { flex-direction: column; }
+      .mode-switch { width: 100%; min-width: 0; }
+      .layout { grid-template-columns: 1fr; gap: 28px; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body data-mode="flow">
+  <main class="page">
+    <div class="topbar">
+      <section class="brand">
+        <h1>Flow</h1>
+        <p id="statusText">10 saved · books and links</p>
+      </section>
+
+      <nav class="mode-switch" aria-label="Switch between Flow and Tab Out">
+        <button class="mode-button" type="button" data-mode-target="flow" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6.5h7a3 3 0 0 1 3 3v9a3 3 0 0 0-3-3H4z"/>
+            <path d="M20 6.5h-7a3 3 0 0 0-3 3v9a3 3 0 0 1 3-3h7z"/>
+          </svg>
+          Flow links
+        </button>
+        <button class="mode-button" type="button" data-mode-target="tabout" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 5h16v4H4z"/>
+            <path d="M4 13h7v6H4z"/>
+            <path d="M15 13h5v6h-5z"/>
+          </svg>
+          Tab Out
+        </button>
+      </nav>
+    </div>
+
+    <div class="flow-panel">
+      <section class="layout">
+        <div class="cards">
+          <article class="tile">
+            <div class="tile-media blue">📖</div>
+            <div class="tile-body">
+              <div class="tile-kicker">ToBooks Xin</div>
+              <div class="tile-title">tobooks</div>
+            </div>
+          </article>
+          <article class="tile">
+            <div class="tile-media">▧</div>
+            <div class="tile-body">
+              <div class="tile-kicker">SkinWise</div>
+              <div class="tile-title">SkinWise Analysis</div>
+            </div>
+          </article>
+          <article class="tile">
+            <div class="tile-media green">Opening keynote</div>
+            <div class="tile-body">
+              <div class="tile-kicker">YouTube</div>
+              <div class="tile-title">Code with Claude...</div>
+            </div>
+          </article>
+          <article class="tile">
+            <div class="tile-media">▧</div>
+            <div class="tile-body">
+              <div class="tile-kicker">Codex Kedaya</div>
+              <div class="tile-title">Codex 凭证助手</div>
+            </div>
+          </article>
+          <article class="tile">
+            <div class="tile-media">▧</div>
+            <div class="tile-body">
+              <div class="tile-kicker">Lixiaolai</div>
+              <div class="tile-title">@xiaolai</div>
+            </div>
+          </article>
+        </div>
+
+        <aside class="rail">
+          <div class="rail-head">
+            <em>Open tabs</em>
+            <span class="rail-line"></span>
+            <span class="rail-count">7 tabs · 6 dupes</span>
+          </div>
+          <div class="open-row">
+            <div class="icon">📘</div>
+            <div>
+              <div class="open-title">EPUB 阅读器</div>
+              <div class="open-meta">Tobooks Xin · 13m · 7x</div>
+            </div>
+            <button class="save-pill">Save</button>
+          </div>
+        </aside>
+      </section>
+    </div>
+
+    <div class="tabout-panel">
+      <section class="layout">
+        <div class="cards">
+          <article class="tile">
+            <div class="tile-media">▧</div>
+            <div class="tile-body">
+              <div class="tile-kicker">Open tab</div>
+              <div class="tile-title">EPUB 阅读器</div>
+            </div>
+          </article>
+          <article class="tile">
+            <div class="tile-media">▧</div>
+            <div class="tile-body">
+              <div class="tile-kicker">Open tab</div>
+              <div class="tile-title">商家3345的小店</div>
+            </div>
+          </article>
+          <article class="tile">
+            <div class="tile-media">▧</div>
+            <div class="tile-body">
+              <div class="tile-kicker">Open tab</div>
+              <div class="tile-title">Immersive Translate</div>
+            </div>
+          </article>
+        </div>
+
+        <aside class="rail">
+          <div class="rail-head">
+            <em>Saved</em>
+            <span class="rail-line"></span>
+            <span class="rail-count">10 saved</span>
+          </div>
+          <div class="open-row">
+            <div class="icon">∞</div>
+            <div>
+              <div class="open-title">Flow links</div>
+              <div class="open-meta">click the switch to return</div>
+            </div>
+            <button class="save-pill">Open</button>
+          </div>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <div class="bottom-ghost">Chrome native footer remains separate: Tab Out</div>
+
+  <script>
+    const statusText = document.getElementById('statusText');
+    const buttons = Array.from(document.querySelectorAll('[data-mode-target]'));
+
+    function setMode(mode) {
+      document.body.dataset.mode = mode;
+      buttons.forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.modeTarget === mode));
+      });
+      statusText.textContent = mode === 'flow'
+        ? '10 saved · books and links'
+        : '7 open · active browser tabs';
+    }
+
+    buttons.forEach(button => {
+      button.addEventListener('click', () => setMode(button.dataset.modeTarget));
+    });
+  </script>
+</body>
+</html>
