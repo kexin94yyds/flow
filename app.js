@@ -182,14 +182,41 @@ async function getNewTabDestination() {
 }
 
 async function setNewTabDestination(destination) {
+  const normalizedDestination = normalizeNewTabDestination(destination);
   try {
     if (!globalThis.chrome?.storage?.local) return;
     await chrome.storage.local.set({
-      [NEW_TAB_DESTINATION_STORAGE_KEY]: normalizeNewTabDestination(destination),
+      [NEW_TAB_DESTINATION_STORAGE_KEY]: normalizedDestination,
     });
   } catch {
     // Navigation should still work even if storage is temporarily unavailable.
+  } finally {
+    applyNewTabDestinationState(normalizedDestination);
   }
+}
+
+function applyNewTabDestinationState(destination) {
+  const normalizedDestination = normalizeNewTabDestination(destination);
+
+  document.querySelectorAll('[data-action="open-custom-newtab"]').forEach(el => {
+    const isActive = normalizedDestination === NEW_TAB_DESTINATION_CUSTOM;
+    el.classList.toggle('is-active', isActive);
+    if (isActive) {
+      el.setAttribute('aria-current', 'page');
+    } else {
+      el.removeAttribute('aria-current');
+    }
+  });
+
+  document.querySelectorAll('[data-action="open-tabout-page"]').forEach(el => {
+    const isActive = normalizedDestination === NEW_TAB_DESTINATION_TABOUT;
+    el.classList.toggle('is-active', isActive);
+    if (isActive) {
+      el.setAttribute('aria-current', 'page');
+    } else {
+      el.removeAttribute('aria-current');
+    }
+  });
 }
 
 function getCustomNewTabEditor() {
@@ -254,9 +281,11 @@ function setupCustomNewTabEditor() {
   });
 }
 
-async function maybeRedirectToCustomNewTab() {
-  const destination = await getNewTabDestination();
-  if (destination !== NEW_TAB_DESTINATION_CUSTOM) return false;
+async function maybeRedirectToCustomNewTab(destination) {
+  const nextDestination = arguments.length > 0
+    ? normalizeNewTabDestination(destination)
+    : await getNewTabDestination();
+  if (nextDestination !== NEW_TAB_DESTINATION_CUSTOM) return false;
 
   const customUrl = getCustomNewTabUrl();
   if (!customUrl || window.location.href === customUrl) return false;
@@ -2002,7 +2031,7 @@ document.addEventListener('click', async (e) => {
   if (action === 'open-custom-newtab') {
     e.preventDefault();
     await setNewTabDestination(NEW_TAB_DESTINATION_CUSTOM);
-    window.location.assign(getCustomNewTabUrl());
+    showToast(`New tabs will open ${getCustomNewTabLabel()}`);
     return;
   }
 
@@ -2394,7 +2423,9 @@ async function initializeDashboard() {
   setupCustomNewTabEditor();
   await loadCustomNewTabConfig();
   applyCustomNewTabConfig();
-  if (await maybeRedirectToCustomNewTab()) return;
+  const destination = await getNewTabDestination();
+  applyNewTabDestinationState(destination);
+  if (await maybeRedirectToCustomNewTab(destination)) return;
   await renderDashboard();
 }
 
