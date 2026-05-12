@@ -87,6 +87,26 @@ chrome.tabs.onUpdated.addListener(() => {
   updateBadge();
 });
 
+// Let the Tobooks content script switch the current tab back to the
+// extension-owned Tab Out page without exposing index.html to the website.
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!message || message.type !== 'open-tabout-page') return undefined;
+
+  const tabId = sender.tab?.id;
+  if (typeof tabId !== 'number') {
+    sendResponse({ ok: false, error: 'No sender tab' });
+    return undefined;
+  }
+
+  chrome.tabs.update(tabId, { url: chrome.runtime.getURL('index.html') })
+    .then(() => sendResponse({ ok: true }))
+    .catch(err => {
+      sendResponse({ ok: false, error: err?.message || String(err) });
+    });
+
+  return true;
+});
+
 // ─── Initial run ─────────────────────────────────────────────────────────────
 
 // Run once immediately when the service worker first loads

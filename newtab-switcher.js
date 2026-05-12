@@ -126,6 +126,14 @@
 
   shadow.querySelector('[data-target="tabout"]')?.addEventListener('click', () => {
     const tabOutUrl = getTabOutUrl();
+    if (chrome.runtime?.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'open-tabout-page' }, (response) => {
+        if (chrome.runtime.lastError || !response?.ok) {
+          if (tabOutUrl) window.location.assign(tabOutUrl);
+        }
+      });
+      return;
+    }
     if (tabOutUrl) window.location.assign(tabOutUrl);
   });
 })();
