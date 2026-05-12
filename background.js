@@ -14,6 +14,8 @@
  */
 
 const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
+const CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY = 'tabout_custom_newtab_config';
+const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
 const NEW_TAB_DESTINATION_CUSTOM = 'custom';
 const NEW_TAB_DESTINATION_TABOUT = 'tabout';
 
@@ -31,6 +33,55 @@ async function saveNewTabDestination(destination) {
   } catch {
     // Do not block the visible navigation path on a transient storage failure.
   }
+}
+
+async function getSavedNewTabDestination() {
+  try {
+    const result = await chrome.storage.local.get(NEW_TAB_DESTINATION_STORAGE_KEY);
+    return normalizeNewTabDestination(result[NEW_TAB_DESTINATION_STORAGE_KEY]);
+  } catch {
+    return NEW_TAB_DESTINATION_TABOUT;
+  }
+}
+
+function normalizeCustomNewTabUrl(value) {
+  try {
+    const raw = String(value || '').trim();
+    if (!raw) return DEFAULT_CUSTOM_NEW_TAB_URL;
+
+    const hasProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(raw);
+    const candidate = hasProtocol ? raw : `https://${raw}`;
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return DEFAULT_CUSTOM_NEW_TAB_URL;
+    }
+
+    return parsed.href;
+  } catch {
+    return DEFAULT_CUSTOM_NEW_TAB_URL;
+  }
+}
+
+async function getCustomNewTabUrl() {
+  try {
+    const result = await chrome.storage.local.get(CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY);
+    return normalizeCustomNewTabUrl(result[CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY]?.url);
+  } catch {
+    return DEFAULT_CUSTOM_NEW_TAB_URL;
+  }
+}
+
+async function openUrlInCurrentOrNewTab(tab, url) {
+  if (typeof tab?.id === 'number') {
+    try {
+      await chrome.tabs.update(tab.id, { url });
+      return;
+    } catch {
+      // Fall through and create a tab if Chrome will not update this one.
+    }
+  }
+
+  await chrome.tabs.create({ url });
 }
 
 // ─── Badge updater ────────────────────────────────────────────────────────────
@@ -92,22 +143,14 @@ chrome.runtime.onStartup.addListener(() => {
   updateBadge();
 });
 
-// Open the Tab Out dashboard when the user clicks the extension from
-// Chrome's toolbar or extensions menu.
+// Follow the selected new-tab destination when the user clicks the extension
+// from Chrome's toolbar or extensions menu.
 chrome.action.onClicked.addListener(async (tab) => {
-  const tabOutUrl = chrome.runtime.getURL('index.html');
-  await saveNewTabDestination(NEW_TAB_DESTINATION_TABOUT);
-
-  if (typeof tab?.id === 'number') {
-    try {
-      await chrome.tabs.update(tab.id, { url: tabOutUrl });
-      return;
-    } catch {
-      // Fall through and create a tab if Chrome will not update this one.
-    }
-  }
-
-  await chrome.tabs.create({ url: tabOutUrl });
+  const destination = await getSavedNewTabDestination();
+  const targetUrl = destination === NEW_TAB_DESTINATION_CUSTOM
+    ? await getCustomNewTabUrl()
+    : chrome.runtime.getURL('index.html');
+  await openUrlInCurrentOrNewTab(tab, targetUrl);
 });
 
 // Update badge whenever a tab is opened
