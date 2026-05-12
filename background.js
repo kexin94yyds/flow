@@ -92,6 +92,24 @@ chrome.runtime.onStartup.addListener(() => {
   updateBadge();
 });
 
+// Open the Tab Out dashboard when the user clicks the extension from
+// Chrome's toolbar or extensions menu.
+chrome.action.onClicked.addListener(async (tab) => {
+  const tabOutUrl = chrome.runtime.getURL('index.html');
+  await saveNewTabDestination(NEW_TAB_DESTINATION_TABOUT);
+
+  if (typeof tab?.id === 'number') {
+    try {
+      await chrome.tabs.update(tab.id, { url: tabOutUrl });
+      return;
+    } catch {
+      // Fall through and create a tab if Chrome will not update this one.
+    }
+  }
+
+  await chrome.tabs.create({ url: tabOutUrl });
+});
+
 // Update badge whenever a tab is opened
 chrome.tabs.onCreated.addListener(() => {
   updateBadge();
