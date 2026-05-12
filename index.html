@@ -28,12 +28,51 @@
         <span class="switcher-icon" aria-hidden="true">▣</span>
         <span data-custom-newtab-label>Custom</span>
       </button>
+      <button class="newtab-switcher-edit" type="button" data-action="edit-custom-newtab" title="Customize custom URL" aria-label="Customize custom URL">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 20h4.2L19.1 9.1a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Z"/>
+          <path d="m13.5 6.5 4 4"/>
+        </svg>
+      </button>
       <button class="newtab-switcher-option is-active" type="button" data-action="open-tabout-page" title="Stay on Tab Out" aria-current="page">
         <span class="switcher-icon" aria-hidden="true">∞</span>
         <span>Tab Out</span>
       </button>
     </nav>
   </header>
+
+  <div class="custom-newtab-modal" id="customNewTabModal" hidden>
+    <form class="custom-newtab-panel" id="customNewTabForm">
+      <div class="custom-newtab-panel-header">
+        <div>
+          <h2>Custom URL</h2>
+          <p>Set the left switcher button.</p>
+        </div>
+        <button class="custom-newtab-close" type="button" data-action="cancel-custom-newtab" aria-label="Close custom URL settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18"/>
+          </svg>
+        </button>
+      </div>
+
+      <label class="custom-newtab-field">
+        <span>Name</span>
+        <input id="customNewTabLabelInput" type="text" autocomplete="off" placeholder="Tobooks">
+      </label>
+
+      <label class="custom-newtab-field">
+        <span>URL</span>
+        <input id="customNewTabUrlInput" type="url" autocomplete="off" placeholder="https://tobooks.xin/tobooks-main/">
+      </label>
+
+      <div class="custom-newtab-error" id="customNewTabError" role="alert"></div>
+
+      <div class="custom-newtab-actions">
+        <button class="custom-newtab-secondary" type="button" data-action="cancel-custom-newtab">Cancel</button>
+        <button class="custom-newtab-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
 
   <!-- ================================================================
        APP LAUNCHER — every open link becomes a clickable app tile
