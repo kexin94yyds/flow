@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flow / Tab Out Switch Mockup</title>
+  <title>Default Link / Tab Out Switch Mockup</title>
   <style>
     :root {
       --paper: #f8f5f0;
@@ -256,13 +256,45 @@
       left: 0;
       right: 0;
       bottom: 0;
-      height: 52px;
-      background: rgba(240, 244, 255, 0.72);
-      display: grid;
-      place-items: center;
+      height: 78px;
+      padding: 0 46px;
+      background: rgba(240, 244, 255, 0.82);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
       color: #1f2937;
+      border-top: 1px solid rgba(47, 111, 237, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    .bottom-link-copy {
+      display: grid;
+      gap: 4px;
+    }
+
+    .bottom-link-copy strong {
       font-size: 14px;
-      text-decoration: underline;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .bottom-link-copy span {
+      font-size: 13px;
+      color: rgba(31, 41, 55, 0.72);
+    }
+
+    .bottom-link-action {
+      min-width: 220px;
+      min-height: 46px;
+      border: 0;
+      border-radius: 14px;
+      background: #111827;
+      color: #ffffff;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0;
     }
 
     .flow-panel,
@@ -285,11 +317,19 @@
 
     @media (max-width: 980px) {
       body { overflow: auto; }
-      .page { padding: 28px 18px 84px; }
+      .page { padding: 28px 18px 110px; }
       .topbar { flex-direction: column; }
       .mode-switch { width: 100%; min-width: 0; }
       .layout { grid-template-columns: 1fr; gap: 28px; }
       .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bottom-ghost {
+        height: auto;
+        min-height: 98px;
+        padding: 16px 18px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .bottom-link-action { width: 100%; }
     }
   </style>
 </head>
@@ -298,7 +338,7 @@
     <div class="topbar">
       <section class="brand">
         <h1>Flow</h1>
-        <p id="statusText">10 saved · books and links</p>
+        <p id="statusText">Default new tab · custom link first</p>
       </section>
 
       <nav class="mode-switch" aria-label="Switch between Flow and Tab Out">
@@ -326,53 +366,53 @@
           <article class="tile">
             <div class="tile-media blue">📖</div>
             <div class="tile-body">
-              <div class="tile-kicker">ToBooks Xin</div>
-              <div class="tile-title">tobooks</div>
+              <div class="tile-kicker">Default landing</div>
+              <div class="tile-title">Custom link opens first</div>
             </div>
           </article>
           <article class="tile">
             <div class="tile-media">▧</div>
             <div class="tile-body">
-              <div class="tile-kicker">SkinWise</div>
-              <div class="tile-title">SkinWise Analysis</div>
+              <div class="tile-kicker">Quick context</div>
+              <div class="tile-title">Tab Out stays one click away</div>
             </div>
           </article>
           <article class="tile">
             <div class="tile-media green">Opening keynote</div>
             <div class="tile-body">
-              <div class="tile-kicker">YouTube</div>
-              <div class="tile-title">Code with Claude...</div>
+              <div class="tile-kicker">Entry point</div>
+              <div class="tile-title">Quiet launch surface</div>
             </div>
           </article>
           <article class="tile">
             <div class="tile-media">▧</div>
             <div class="tile-body">
-              <div class="tile-kicker">Codex Kedaya</div>
-              <div class="tile-title">Codex 凭证助手</div>
+              <div class="tile-kicker">Switch</div>
+              <div class="tile-title">Use right control for Tab Out</div>
             </div>
           </article>
           <article class="tile">
             <div class="tile-media">▧</div>
             <div class="tile-body">
-              <div class="tile-kicker">Lixiaolai</div>
-              <div class="tile-title">@xiaolai</div>
+              <div class="tile-kicker">Footer action</div>
+              <div class="tile-title">Custom link sits at bottom</div>
             </div>
           </article>
         </div>
 
         <aside class="rail">
           <div class="rail-head">
-            <em>Open tabs</em>
+            <em>Default page</em>
             <span class="rail-line"></span>
-            <span class="rail-count">7 tabs · 6 dupes</span>
+            <span class="rail-count">custom link</span>
           </div>
           <div class="open-row">
             <div class="icon">📘</div>
             <div>
-              <div class="open-title">EPUB 阅读器</div>
-              <div class="open-meta">Tobooks Xin · 13m · 7x</div>
+              <div class="open-title">tobooks.xin/tobooks-main</div>
+              <div class="open-meta">opens first on every new tab</div>
             </div>
-            <button class="save-pill">Save</button>
+            <button class="save-pill">Open</button>
           </div>
         </aside>
       </section>
@@ -413,8 +453,8 @@
           <div class="open-row">
             <div class="icon">∞</div>
             <div>
-              <div class="open-title">Flow links</div>
-              <div class="open-meta">click the switch to return</div>
+              <div class="open-title">Custom link view</div>
+              <div class="open-meta">click the left segment to return</div>
             </div>
             <button class="save-pill">Open</button>
           </div>
@@ -423,7 +463,13 @@
     </div>
   </main>
 
-  <div class="bottom-ghost">Chrome native footer remains separate: Tab Out</div>
+  <div class="bottom-ghost">
+    <div class="bottom-link-copy">
+      <strong>Custom link</strong>
+      <span>https://tobooks.xin/tobooks-main/</span>
+    </div>
+    <button class="bottom-link-action" type="button">Open custom link</button>
+  </div>
 
   <script>
     const statusText = document.getElementById('statusText');
@@ -435,7 +481,7 @@
         button.setAttribute('aria-pressed', String(button.dataset.modeTarget === mode));
       });
       statusText.textContent = mode === 'flow'
-        ? '10 saved · books and links'
+        ? 'Default new tab · custom link first'
         : '7 open · active browser tabs';
     }
 
