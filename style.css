@@ -1183,6 +1183,19 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
 
 /* On narrow screens, stack vertically */
 @media (max-width: 800px) {
+  .launcher-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .newtab-switcher {
+    width: min(100%, 280px);
+  }
+
+  .newtab-switcher-option {
+    min-width: 0;
+  }
+
   .dashboard-columns {
     flex-direction: column;
   }
