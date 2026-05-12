@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Link Slot Mockup</title>
+  <style>
+    :root {
+      --paper: #f8f5f0;
+      --ink: #1a1613;
+      --muted: #9a918a;
+      --line: #e8e2da;
+      --card: #fffdf9;
+      --sage: #5a7a62;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 24% 10%, rgba(255,255,255,0.94), transparent 30%),
+        linear-gradient(135deg, #fbf8f3, var(--paper));
+    }
+
+    .page {
+      width: 100%;
+      min-height: 100vh;
+      padding: 44px 48px 92px;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 520px;
+      align-items: start;
+      gap: 36px;
+      margin-bottom: 34px;
+    }
+
+    .brand h1 {
+      margin: 0 0 8px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 56px;
+      line-height: 0.94;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .custom-slot {
+      min-height: 118px;
+      border: 1px dashed rgba(154, 145, 138, 0.56);
+      border-radius: 18px;
+      background: rgba(255, 253, 249, 0.68);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.9),
+        0 18px 42px rgba(38, 30, 22, 0.06);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .custom-copy {
+      min-width: 0;
+    }
+
+    .custom-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .custom-title {
+      font-size: 24px;
+      line-height: 1.08;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .custom-url {
+      max-width: 340px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #55616e;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .slot-button {
+      width: 118px;
+      height: 48px;
+      border: 1px solid rgba(90, 122, 98, 0.28);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.92);
+      color: var(--sage);
+      font: inherit;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+      flex: 0 0 auto;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.92),
+        0 8px 20px rgba(38,30,22,0.08);
+    }
+
+    .slot-button:hover {
+      background: #fff;
+      transform: translateY(-1px);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 62px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(148px, 1fr));
+      gap: 18px;
+    }
+
+    .tile {
+      min-height: 214px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--card);
+      box-shadow: 0 7px 22px rgba(38, 30, 22, 0.06);
+    }
+
+    .tile-media {
+      height: 108px;
+      display: grid;
+      place-items: center;
+      background: #eee8e1;
+      color: #b8aea5;
+      font-weight: 900;
+    }
+
+    .tile-media.blue {
+      background: linear-gradient(135deg, #6ca7d4, #2f7dac);
+      color: white;
+    }
+
+    .tile-media.green {
+      background: linear-gradient(135deg, #c8dacf, #9ebbaa);
+      color: #22352b;
+    }
+
+    .tile-body {
+      padding: 13px 14px 16px;
+    }
+
+    .tile-kicker {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .tile-title {
+      font-size: 18px;
+      line-height: 1.18;
+      font-weight: 900;
+    }
+
+    .rail {
+      padding-top: 18px;
+    }
+
+    .rail-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      margin-bottom: 34px;
+    }
+
+    .rail-head em {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .rail-line {
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .rail-count {
+      font-size: 14px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .open-row {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+    }
+
+    .icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: #e7f0f8;
+      color: #24618a;
+      font-weight: 900;
+    }
+
+    .open-title {
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .open-meta {
+      color: var(--muted);
+      margin-top: 3px;
+      font-size: 14px;
+    }
+
+    .save-pill {
+      border: 1px solid rgba(90, 122, 98, 0.26);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+      color: var(--sage);
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .footer-hint {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      background: rgba(239, 244, 255, 0.72);
+      color: #334155;
+      font-size: 14px;
+    }
+
+    @media (max-width: 1040px) {
+      .page { padding: 28px 18px 92px; }
+      .header,
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="header">
+      <div class="brand">
+        <h1>Flow</h1>
+        <p>10 saved · 7 open</p>
+      </div>
+
+      <aside class="custom-slot" aria-label="Custom new tab link placeholder">
+        <div class="custom-copy">
+          <div class="custom-label">Custom New Tab Slot</div>
+          <div class="custom-title">我的书</div>
+          <div class="custom-url">https://tobooks.xin/tobooks-main/</div>
+        </div>
+        <button class="slot-button" type="button">Open</button>
+      </aside>
+    </section>
+
+    <section class="dashboard">
+      <div class="cards">
+        <article class="tile">
+          <div class="tile-media blue">📖</div>
+          <div class="tile-body">
+            <div class="tile-kicker">ToBooks Xin</div>
+            <div class="tile-title">tobooks</div>
+          </div>
+        </article>
+        <article class="tile">
+          <div class="tile-media">▧</div>
+          <div class="tile-body">
+            <div class="tile-kicker">SkinWise</div>
+            <div class="tile-title">SkinWise Analysis</div>
+          </div>
+        </article>
+        <article class="tile">
+          <div class="tile-media green">Opening keynote</div>
+          <div class="tile-body">
+            <div class="tile-kicker">YouTube</div>
+            <div class="tile-title">Code with Claude...</div>
+          </div>
+        </article>
+        <article class="tile">
+          <div class="tile-media">▧</div>
+          <div class="tile-body">
+            <div class="tile-kicker">Codex Kedaya</div>
+            <div class="tile-title">Codex 凭证助手</div>
+          </div>
+        </article>
+        <article class="tile">
+          <div class="tile-media">▧</div>
+          <div class="tile-body">
+            <div class="tile-kicker">Lixiaolai</div>
+            <div class="tile-title">@xiaolai</div>
+          </div>
+        </article>
+      </div>
+
+      <aside class="rail">
+        <div class="rail-head">
+          <em>Open tabs</em>
+          <span class="rail-line"></span>
+          <span class="rail-count">7 tabs · 6 dupes</span>
+        </div>
+        <div class="open-row">
+          <div class="icon">📘</div>
+          <div>
+            <div class="open-title">EPUB 阅读器</div>
+            <div class="open-meta">Tobooks Xin · 13m · 7x</div>
+          </div>
+          <button class="save-pill" type="button">Save</button>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <div class="footer-hint">这里只演示“自定义链接占位槽”的版式，不改 Chrome 原生 footer。</div>
+</body>
+</html>
