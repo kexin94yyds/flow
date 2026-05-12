@@ -2,6 +2,9 @@
   'use strict';
 
   const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
+  const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
+  const NEW_TAB_DESTINATION_CUSTOM = 'custom';
+  const NEW_TAB_DESTINATION_TABOUT = 'tabout';
   const hostId = 'tabout-newtab-switcher-host';
 
   if (document.getElementById(hostId)) return;
@@ -13,6 +16,36 @@
     return configured || DEFAULT_CUSTOM_NEW_TAB_URL;
   }
 
+  function normalizePathname(pathname) {
+    if (!pathname || pathname === '/') return '/';
+    return pathname.replace(/\/+$/, '');
+  }
+
+  function isCurrentCustomNewTabUrl() {
+    try {
+      const current = new URL(window.location.href);
+      const custom = new URL(getCustomNewTabUrl());
+      return (
+        current.origin === custom.origin &&
+        normalizePathname(current.pathname) === normalizePathname(custom.pathname) &&
+        current.search === custom.search
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  async function setNewTabDestination(destination) {
+    try {
+      if (!globalThis.chrome?.storage?.local) return;
+      await chrome.storage.local.set({
+        [NEW_TAB_DESTINATION_STORAGE_KEY]: destination,
+      });
+    } catch {
+      // Keep navigation usable even if storage is temporarily unavailable.
+    }
+  }
+
   function getTabOutUrl() {
     try {
       return chrome.runtime.getURL('index.html');
@@ -20,6 +53,8 @@
       return '';
     }
   }
+
+  if (!isCurrentCustomNewTabUrl()) return;
 
   const host = document.createElement('div');
   host.id = hostId;
@@ -117,14 +152,16 @@
 
   document.documentElement.appendChild(host);
 
-  shadow.querySelector('[data-target="custom"]')?.addEventListener('click', () => {
+  shadow.querySelector('[data-target="custom"]')?.addEventListener('click', async () => {
+    await setNewTabDestination(NEW_TAB_DESTINATION_CUSTOM);
     const customUrl = getCustomNewTabUrl();
     if (customUrl && window.location.href !== customUrl) {
       window.location.assign(customUrl);
     }
   });
 
-  shadow.querySelector('[data-target="tabout"]')?.addEventListener('click', () => {
+  shadow.querySelector('[data-target="tabout"]')?.addEventListener('click', async () => {
+    await setNewTabDestination(NEW_TAB_DESTINATION_TABOUT);
     const tabOutUrl = getTabOutUrl();
     if (chrome.runtime?.sendMessage) {
       chrome.runtime.sendMessage({ type: 'open-tabout-page' }, (response) => {
