@@ -34,6 +34,7 @@ document.addEventListener('error', (event) => {
 // All open tabs — populated by fetchOpenTabs()
 let openTabs = [];
 
+const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
 const LINK_PREVIEW_CACHE_KEY = 'link_previews_v4';
 const LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 const LINK_PREVIEW_MISS_MAX_AGE = 1000 * 60 * 60 * 12;
@@ -46,6 +47,21 @@ let linkPreviewCache = {};
 let linkPreviewCacheLoaded = false;
 let previewQueueToken = 0;
 let previewCacheSaveTimer = null;
+
+function getCustomNewTabUrl() {
+  const configured = typeof LOCAL_CUSTOM_NEW_TAB_URL === 'string'
+    ? LOCAL_CUSTOM_NEW_TAB_URL.trim()
+    : '';
+  return configured || DEFAULT_CUSTOM_NEW_TAB_URL;
+}
+
+function getTabOutUrl() {
+  try {
+    return chrome.runtime.getURL('index.html');
+  } catch {
+    return 'index.html';
+  }
+}
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -1768,6 +1784,19 @@ document.addEventListener('click', async (e) => {
   if (!actionEl) return;
 
   const action = actionEl.dataset.action;
+
+  if (action === 'open-custom-newtab') {
+    e.preventDefault();
+    window.location.assign(getCustomNewTabUrl());
+    return;
+  }
+
+  if (action === 'open-tabout-page') {
+    e.preventDefault();
+    const tabOutUrl = getTabOutUrl();
+    if (window.location.href !== tabOutUrl) window.location.assign(tabOutUrl);
+    return;
+  }
 
   // ---- Close duplicate Tab Out tabs ----
   if (action === 'close-tabout-dupes') {
