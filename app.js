@@ -35,6 +35,7 @@ document.addEventListener('error', (event) => {
 let openTabs = [];
 
 const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
+const DEFAULT_CUSTOM_NEW_TAB_LABEL = 'Tobooks';
 const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
 const NEW_TAB_DESTINATION_CUSTOM = 'custom';
 const NEW_TAB_DESTINATION_TABOUT = 'tabout';
@@ -58,12 +59,34 @@ function getCustomNewTabUrl() {
   return configured || DEFAULT_CUSTOM_NEW_TAB_URL;
 }
 
+function getCustomNewTabLabel() {
+  const configured = typeof LOCAL_CUSTOM_NEW_TAB_LABEL === 'string'
+    ? LOCAL_CUSTOM_NEW_TAB_LABEL.trim()
+    : '';
+  return configured || DEFAULT_CUSTOM_NEW_TAB_LABEL;
+}
+
 function getTabOutUrl() {
   try {
     return chrome.runtime.getURL('index.html');
   } catch {
     return 'index.html';
   }
+}
+
+function applyCustomNewTabConfig() {
+  const label = getCustomNewTabLabel();
+  const url = getCustomNewTabUrl();
+
+  document.querySelectorAll('[data-custom-newtab-label]').forEach(el => {
+    el.textContent = label;
+  });
+
+  document.querySelectorAll('[data-action="open-custom-newtab"]').forEach(el => {
+    const title = url ? `Open ${label}: ${url}` : `Open ${label}`;
+    el.setAttribute('title', title);
+    el.setAttribute('aria-label', title);
+  });
 }
 
 function normalizeNewTabDestination(destination) {
@@ -2218,6 +2241,7 @@ document.addEventListener('input', async (e) => {
    INITIALIZE
    ---------------------------------------------------------------- */
 async function initializeDashboard() {
+  applyCustomNewTabConfig();
   if (await maybeRedirectToCustomNewTab()) return;
   await renderDashboard();
 }
