@@ -37,6 +37,7 @@ let openTabs = [];
 const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
 const DEFAULT_CUSTOM_NEW_TAB_LABEL = 'Tobooks';
 const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
+const CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY = 'tabout_custom_newtab_config';
 const NEW_TAB_DESTINATION_CUSTOM = 'custom';
 const NEW_TAB_DESTINATION_TABOUT = 'tabout';
 const LINK_PREVIEW_CACHE_KEY = 'link_previews_v4';
@@ -51,19 +52,89 @@ let linkPreviewCache = {};
 let linkPreviewCacheLoaded = false;
 let previewQueueToken = 0;
 let previewCacheSaveTimer = null;
+let customNewTabConfig = null;
 
-function getCustomNewTabUrl() {
+function getDefaultCustomNewTabUrl() {
   const configured = typeof LOCAL_CUSTOM_NEW_TAB_URL === 'string'
     ? LOCAL_CUSTOM_NEW_TAB_URL.trim()
     : '';
   return configured || DEFAULT_CUSTOM_NEW_TAB_URL;
 }
 
-function getCustomNewTabLabel() {
+function getDefaultCustomNewTabLabel() {
   const configured = typeof LOCAL_CUSTOM_NEW_TAB_LABEL === 'string'
     ? LOCAL_CUSTOM_NEW_TAB_LABEL.trim()
     : '';
   return configured || DEFAULT_CUSTOM_NEW_TAB_LABEL;
+}
+
+function normalizeCustomNewTabUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) throw new Error('Enter a URL.');
+
+  const hasProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(raw);
+  const candidate = hasProtocol ? raw : `https://${raw}`;
+  const parsed = new URL(candidate);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Use an http or https URL.');
+  }
+
+  return parsed.href;
+}
+
+function getLabelFromUrl(url) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./i, '');
+    return hostname || DEFAULT_CUSTOM_NEW_TAB_LABEL;
+  } catch {
+    return DEFAULT_CUSTOM_NEW_TAB_LABEL;
+  }
+}
+
+function normalizeCustomNewTabConfig(value) {
+  if (!value || typeof value !== 'object') return null;
+
+  try {
+    const url = normalizeCustomNewTabUrl(value.url);
+    const label = String(value.label || '').trim() || getLabelFromUrl(url);
+    return { label, url };
+  } catch {
+    return null;
+  }
+}
+
+async function loadCustomNewTabConfig() {
+  try {
+    if (!globalThis.chrome?.storage?.local) return;
+    const result = await chrome.storage.local.get(CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY);
+    customNewTabConfig = normalizeCustomNewTabConfig(result[CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY]);
+  } catch {
+    customNewTabConfig = null;
+  }
+}
+
+async function saveCustomNewTabConfig(labelValue, urlValue) {
+  const url = normalizeCustomNewTabUrl(urlValue);
+  const label = String(labelValue || '').trim() || getLabelFromUrl(url);
+  const nextConfig = { label, url };
+
+  if (globalThis.chrome?.storage?.local) {
+    await chrome.storage.local.set({
+      [CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY]: nextConfig,
+    });
+  }
+
+  customNewTabConfig = nextConfig;
+  applyCustomNewTabConfig();
+  return nextConfig;
+}
+
+function getCustomNewTabUrl() {
+  return customNewTabConfig?.url || getDefaultCustomNewTabUrl();
+}
+
+function getCustomNewTabLabel() {
+  return customNewTabConfig?.label || getDefaultCustomNewTabLabel();
 }
 
 function getTabOutUrl() {
@@ -86,6 +157,11 @@ function applyCustomNewTabConfig() {
     const title = url ? `Open ${label}: ${url}` : `Open ${label}`;
     el.setAttribute('title', title);
     el.setAttribute('aria-label', title);
+  });
+
+  document.querySelectorAll('[data-action="edit-custom-newtab"]').forEach(el => {
+    el.setAttribute('title', `Edit ${label}: ${url}`);
+    el.setAttribute('aria-label', `Edit ${label} URL`);
   });
 }
 
@@ -114,6 +190,68 @@ async function setNewTabDestination(destination) {
   } catch {
     // Navigation should still work even if storage is temporarily unavailable.
   }
+}
+
+function getCustomNewTabEditor() {
+  return {
+    modal: document.getElementById('customNewTabModal'),
+    form: document.getElementById('customNewTabForm'),
+    labelInput: document.getElementById('customNewTabLabelInput'),
+    urlInput: document.getElementById('customNewTabUrlInput'),
+    error: document.getElementById('customNewTabError'),
+  };
+}
+
+function setCustomNewTabError(message) {
+  const { error } = getCustomNewTabEditor();
+  if (error) error.textContent = message || '';
+}
+
+function openCustomNewTabEditor() {
+  const { modal, labelInput, urlInput } = getCustomNewTabEditor();
+  if (!modal || !labelInput || !urlInput) return;
+
+  labelInput.value = getCustomNewTabLabel();
+  urlInput.value = getCustomNewTabUrl();
+  setCustomNewTabError('');
+  modal.hidden = false;
+  requestAnimationFrame(() => {
+    urlInput.focus();
+    urlInput.select();
+  });
+}
+
+function closeCustomNewTabEditor() {
+  const { modal } = getCustomNewTabEditor();
+  if (modal) modal.hidden = true;
+  setCustomNewTabError('');
+}
+
+function setupCustomNewTabEditor() {
+  const { modal, form, labelInput, urlInput } = getCustomNewTabEditor();
+  if (!modal || !form || !labelInput || !urlInput) return;
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setCustomNewTabError('');
+
+    try {
+      const nextConfig = await saveCustomNewTabConfig(labelInput.value, urlInput.value);
+      await setNewTabDestination(NEW_TAB_DESTINATION_CUSTOM);
+      closeCustomNewTabEditor();
+      showToast(`Custom tab saved: ${nextConfig.label}`);
+    } catch (err) {
+      setCustomNewTabError(err?.message || 'Could not save this URL.');
+    }
+  });
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeCustomNewTabEditor();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !modal.hidden) closeCustomNewTabEditor();
+  });
 }
 
 async function maybeRedirectToCustomNewTab() {
