@@ -1987,6 +1987,18 @@ document.addEventListener('click', async (e) => {
 
   const action = actionEl.dataset.action;
 
+  if (action === 'edit-custom-newtab') {
+    e.preventDefault();
+    openCustomNewTabEditor();
+    return;
+  }
+
+  if (action === 'cancel-custom-newtab') {
+    e.preventDefault();
+    closeCustomNewTabEditor();
+    return;
+  }
+
   if (action === 'open-custom-newtab') {
     e.preventDefault();
     await setNewTabDestination(NEW_TAB_DESTINATION_CUSTOM);
@@ -2379,6 +2391,8 @@ document.addEventListener('input', async (e) => {
    INITIALIZE
    ---------------------------------------------------------------- */
 async function initializeDashboard() {
+  setupCustomNewTabEditor();
+  await loadCustomNewTabConfig();
   applyCustomNewTabConfig();
   if (await maybeRedirectToCustomNewTab()) return;
   await renderDashboard();
