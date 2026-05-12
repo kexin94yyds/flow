@@ -13,6 +13,26 @@
  *   Red    (#b35a5a) → 21+ tabs   (time to cull!)
  */
 
+const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
+const NEW_TAB_DESTINATION_CUSTOM = 'custom';
+const NEW_TAB_DESTINATION_TABOUT = 'tabout';
+
+function normalizeNewTabDestination(destination) {
+  return destination === NEW_TAB_DESTINATION_CUSTOM
+    ? NEW_TAB_DESTINATION_CUSTOM
+    : NEW_TAB_DESTINATION_TABOUT;
+}
+
+async function saveNewTabDestination(destination) {
+  try {
+    await chrome.storage.local.set({
+      [NEW_TAB_DESTINATION_STORAGE_KEY]: normalizeNewTabDestination(destination),
+    });
+  } catch {
+    // Do not block the visible navigation path on a transient storage failure.
+  }
+}
+
 // ─── Badge updater ────────────────────────────────────────────────────────────
 
 /**
@@ -90,7 +110,19 @@ chrome.tabs.onUpdated.addListener(() => {
 // Let the Tobooks content script switch the current tab back to the
 // extension-owned Tab Out page without exposing index.html to the website.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || message.type !== 'open-tabout-page') return undefined;
+  if (!message) return undefined;
+
+  if (message.type === 'set-newtab-destination') {
+    saveNewTabDestination(message.destination)
+      .then(() => sendResponse({ ok: true }))
+      .catch(err => {
+        sendResponse({ ok: false, error: err?.message || String(err) });
+      });
+
+    return true;
+  }
+
+  if (message.type !== 'open-tabout-page') return undefined;
 
   const tabId = sender.tab?.id;
   if (typeof tabId !== 'number') {
@@ -98,7 +130,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return undefined;
   }
 
-  chrome.tabs.update(tabId, { url: chrome.runtime.getURL('index.html') })
+  saveNewTabDestination(NEW_TAB_DESTINATION_TABOUT)
+    .then(() => chrome.tabs.update(tabId, { url: chrome.runtime.getURL('index.html') }))
     .then(() => sendResponse({ ok: true }))
     .catch(err => {
       sendResponse({ ok: false, error: err?.message || String(err) });
