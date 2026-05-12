@@ -281,7 +281,17 @@ function setupCustomNewTabEditor() {
   });
 }
 
+function shouldBypassCustomNewTabRedirect() {
+  try {
+    return new URL(window.location.href).searchParams.has('tabout');
+  } catch {
+    return false;
+  }
+}
+
 async function maybeRedirectToCustomNewTab(destination) {
+  if (shouldBypassCustomNewTabRedirect()) return false;
+
   const nextDestination = arguments.length > 0
     ? normalizeNewTabDestination(destination)
     : await getNewTabDestination();
