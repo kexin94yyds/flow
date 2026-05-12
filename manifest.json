@@ -10,13 +10,6 @@
   },
   "chrome_url_overrides": { "newtab": "index.html" },
   "background": { "service_worker": "background.js" },
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "js": ["config.local.js", "newtab-switcher.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "action": {
     "default_title": "Tab Out",
     "default_icon": {
