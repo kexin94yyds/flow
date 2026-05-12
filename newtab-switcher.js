@@ -2,6 +2,7 @@
   'use strict';
 
   const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
+  const DEFAULT_CUSTOM_NEW_TAB_LABEL = 'Tobooks';
   const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
   const NEW_TAB_DESTINATION_CUSTOM = 'custom';
   const NEW_TAB_DESTINATION_TABOUT = 'tabout';
@@ -14,6 +15,23 @@
       ? LOCAL_CUSTOM_NEW_TAB_URL.trim()
       : '';
     return configured || DEFAULT_CUSTOM_NEW_TAB_URL;
+  }
+
+  function getCustomNewTabLabel() {
+    const configured = typeof LOCAL_CUSTOM_NEW_TAB_LABEL === 'string'
+      ? LOCAL_CUSTOM_NEW_TAB_LABEL.trim()
+      : '';
+    return configured || DEFAULT_CUSTOM_NEW_TAB_LABEL;
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, char => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[char]));
   }
 
   function normalizePathname(pathname) {
@@ -55,6 +73,12 @@
   }
 
   if (!isCurrentCustomNewTabUrl()) return;
+
+  const customUrl = getCustomNewTabUrl();
+  const customLabel = getCustomNewTabLabel();
+  const customTitle = customUrl
+    ? `Current ${customLabel}: ${customUrl}`
+    : `Current ${customLabel}`;
 
   const host = document.createElement('div');
   host.id = hostId;
@@ -139,9 +163,9 @@
       }
     </style>
     <nav class="switcher" aria-label="New tab destination">
-      <button type="button" data-target="custom" class="is-active" aria-current="page" title="Current Tobooks page">
+      <button type="button" data-target="custom" class="is-active" aria-current="page" title="${escapeHtml(customTitle)}">
         <span class="icon" aria-hidden="true">▣</span>
-        <span>Books</span>
+        <span>${escapeHtml(customLabel)}</span>
       </button>
       <button type="button" data-target="tabout" title="Open Tab Out">
         <span class="icon" aria-hidden="true">∞</span>
