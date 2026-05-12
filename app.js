@@ -35,6 +35,9 @@ document.addEventListener('error', (event) => {
 let openTabs = [];
 
 const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
+const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
+const NEW_TAB_DESTINATION_CUSTOM = 'custom';
+const NEW_TAB_DESTINATION_TABOUT = 'tabout';
 const LINK_PREVIEW_CACHE_KEY = 'link_previews_v4';
 const LINK_PREVIEW_MAX_AGE = 1000 * 60 * 60 * 24 * 7;
 const LINK_PREVIEW_MISS_MAX_AGE = 1000 * 60 * 60 * 12;
@@ -61,6 +64,44 @@ function getTabOutUrl() {
   } catch {
     return 'index.html';
   }
+}
+
+function normalizeNewTabDestination(destination) {
+  return destination === NEW_TAB_DESTINATION_CUSTOM
+    ? NEW_TAB_DESTINATION_CUSTOM
+    : NEW_TAB_DESTINATION_TABOUT;
+}
+
+async function getNewTabDestination() {
+  try {
+    if (!globalThis.chrome?.storage?.local) return NEW_TAB_DESTINATION_TABOUT;
+    const result = await chrome.storage.local.get(NEW_TAB_DESTINATION_STORAGE_KEY);
+    return normalizeNewTabDestination(result[NEW_TAB_DESTINATION_STORAGE_KEY]);
+  } catch {
+    return NEW_TAB_DESTINATION_TABOUT;
+  }
+}
+
+async function setNewTabDestination(destination) {
+  try {
+    if (!globalThis.chrome?.storage?.local) return;
+    await chrome.storage.local.set({
+      [NEW_TAB_DESTINATION_STORAGE_KEY]: normalizeNewTabDestination(destination),
+    });
+  } catch {
+    // Navigation should still work even if storage is temporarily unavailable.
+  }
+}
+
+async function maybeRedirectToCustomNewTab() {
+  const destination = await getNewTabDestination();
+  if (destination !== NEW_TAB_DESTINATION_CUSTOM) return false;
+
+  const customUrl = getCustomNewTabUrl();
+  if (!customUrl || window.location.href === customUrl) return false;
+
+  window.location.replace(customUrl);
+  return true;
 }
 
 function wait(ms) {
@@ -1787,12 +1828,14 @@ document.addEventListener('click', async (e) => {
 
   if (action === 'open-custom-newtab') {
     e.preventDefault();
+    await setNewTabDestination(NEW_TAB_DESTINATION_CUSTOM);
     window.location.assign(getCustomNewTabUrl());
     return;
   }
 
   if (action === 'open-tabout-page') {
     e.preventDefault();
+    await setNewTabDestination(NEW_TAB_DESTINATION_TABOUT);
     const tabOutUrl = getTabOutUrl();
     if (window.location.href !== tabOutUrl) window.location.assign(tabOutUrl);
     return;
@@ -2174,4 +2217,9 @@ document.addEventListener('input', async (e) => {
 /* ----------------------------------------------------------------
    INITIALIZE
    ---------------------------------------------------------------- */
-renderDashboard();
+async function initializeDashboard() {
+  if (await maybeRedirectToCustomNewTab()) return;
+  await renderDashboard();
+}
+
+initializeDashboard();
