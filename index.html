@@ -24,16 +24,18 @@
     </div>
 
     <nav class="newtab-switcher" aria-label="New tab destination">
-      <button class="newtab-switcher-option" type="button" data-action="open-custom-newtab" title="Open custom link">
-        <span class="switcher-icon" aria-hidden="true">▣</span>
-        <span data-custom-newtab-label>Custom</span>
-      </button>
-      <button class="newtab-switcher-edit" type="button" data-action="edit-custom-newtab" title="Customize custom URL" aria-label="Customize custom URL">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 20h4.2L19.1 9.1a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Z"/>
-          <path d="m13.5 6.5 4 4"/>
-        </svg>
-      </button>
+      <div class="newtab-switcher-custom" aria-label="Custom new tab URL">
+        <button class="newtab-switcher-option newtab-switcher-custom-open" type="button" data-action="open-custom-newtab" title="Open custom link">
+          <span class="switcher-icon" aria-hidden="true">▣</span>
+          <span class="newtab-switcher-text" data-custom-newtab-label>Custom</span>
+        </button>
+        <button class="newtab-switcher-custom-edit" type="button" data-action="edit-custom-newtab" title="Edit custom URL" aria-label="Edit custom URL">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 20h4.2L19.1 9.1a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8V20Z"/>
+            <path d="m13.5 6.5 4 4"/>
+          </svg>
+        </button>
+      </div>
       <button class="newtab-switcher-option is-active" type="button" data-action="open-tabout-page" title="Stay on Tab Out" aria-current="page">
         <span class="switcher-icon" aria-hidden="true">∞</span>
         <span>Tab Out</span>
