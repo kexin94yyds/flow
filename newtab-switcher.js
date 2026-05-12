@@ -1,27 +1,82 @@
-(function () {
+(async function () {
   'use strict';
 
   const DEFAULT_CUSTOM_NEW_TAB_URL = 'https://tobooks.xin/tobooks-main/';
   const DEFAULT_CUSTOM_NEW_TAB_LABEL = 'Tobooks';
   const NEW_TAB_DESTINATION_STORAGE_KEY = 'tabout_newtab_destination';
+  const CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY = 'tabout_custom_newtab_config';
   const NEW_TAB_DESTINATION_CUSTOM = 'custom';
   const NEW_TAB_DESTINATION_TABOUT = 'tabout';
   const hostId = 'tabout-newtab-switcher-host';
+  let customNewTabConfig = null;
 
   if (document.getElementById(hostId)) return;
 
-  function getCustomNewTabUrl() {
+  function getDefaultCustomNewTabUrl() {
     const configured = typeof LOCAL_CUSTOM_NEW_TAB_URL === 'string'
       ? LOCAL_CUSTOM_NEW_TAB_URL.trim()
       : '';
     return configured || DEFAULT_CUSTOM_NEW_TAB_URL;
   }
 
-  function getCustomNewTabLabel() {
+  function getDefaultCustomNewTabLabel() {
     const configured = typeof LOCAL_CUSTOM_NEW_TAB_LABEL === 'string'
       ? LOCAL_CUSTOM_NEW_TAB_LABEL.trim()
       : '';
     return configured || DEFAULT_CUSTOM_NEW_TAB_LABEL;
+  }
+
+  function normalizeCustomNewTabUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) throw new Error('Enter a URL.');
+
+    const hasProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(raw);
+    const candidate = hasProtocol ? raw : `https://${raw}`;
+    const parsed = new URL(candidate);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error('Use an http or https URL.');
+    }
+
+    return parsed.href;
+  }
+
+  function getLabelFromUrl(url) {
+    try {
+      const hostname = new URL(url).hostname.replace(/^www\./i, '');
+      return hostname || DEFAULT_CUSTOM_NEW_TAB_LABEL;
+    } catch {
+      return DEFAULT_CUSTOM_NEW_TAB_LABEL;
+    }
+  }
+
+  function normalizeCustomNewTabConfig(value) {
+    if (!value || typeof value !== 'object') return null;
+
+    try {
+      const url = normalizeCustomNewTabUrl(value.url);
+      const label = String(value.label || '').trim() || getLabelFromUrl(url);
+      return { label, url };
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadCustomNewTabConfig() {
+    try {
+      if (!globalThis.chrome?.storage?.local) return;
+      const result = await chrome.storage.local.get(CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY);
+      customNewTabConfig = normalizeCustomNewTabConfig(result[CUSTOM_NEW_TAB_CONFIG_STORAGE_KEY]);
+    } catch {
+      customNewTabConfig = null;
+    }
+  }
+
+  function getCustomNewTabUrl() {
+    return customNewTabConfig?.url || getDefaultCustomNewTabUrl();
+  }
+
+  function getCustomNewTabLabel() {
+    return customNewTabConfig?.label || getDefaultCustomNewTabLabel();
   }
 
   function escapeHtml(value) {
@@ -71,6 +126,8 @@
       return '';
     }
   }
+
+  await loadCustomNewTabConfig();
 
   if (!isCurrentCustomNewTabUrl()) return;
 
