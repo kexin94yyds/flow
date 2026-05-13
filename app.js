@@ -2042,6 +2042,10 @@ document.addEventListener('click', async (e) => {
     e.preventDefault();
     await setNewTabDestination(NEW_TAB_DESTINATION_CUSTOM);
     showToast(`New tabs will open ${getCustomNewTabLabel()}`);
+    const customUrl = getCustomNewTabUrl();
+    if (customUrl && window.location.href !== customUrl) {
+      window.location.assign(customUrl);
+    }
     return;
   }
 
