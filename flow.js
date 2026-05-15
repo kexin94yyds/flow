@@ -970,7 +970,7 @@
 
     return `
       <article class="tabout-project-card" data-tab-url="${escapeHtml(url)}">
-        <button class="tabout-project-thumb tabout-card-pressable" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="切换到此标签">
+        <button class="tabout-project-thumb tabout-card-pressable" data-history-action="focus-open-tab" data-tab-url="${escapeHtml(url)}" title="在新标签页打开">
           ${card.previewImageUrl ? `<img class="tabout-project-preview" src="${escapeHtml(card.previewImageUrl)}" alt="${escapeHtml(title)}" data-hide-on-error="true">` : ''}
           ${!card.previewImageUrl ? `<div class="tabout-project-fallback-mark">${escapeHtml(getBoardMonogram(domain))}</div>` : ''}
           ${!card.previewImageUrl && favicon ? `<img class="tabout-project-favicon" src="${escapeHtml(favicon)}" alt="" data-hide-on-error="true">` : ''}
@@ -1190,8 +1190,8 @@
     const tabId = Number(actionEl.dataset.tabId);
 
     if (action === 'focus-open-tab') {
-      await focusHistoryTab(tabUrl);
-      showHistoryToast('已切换到标签页');
+      await openHistoryOpenTab(tabUrl);
+      showHistoryToast('已在新标签页打开');
       return;
     }
 
@@ -1271,33 +1271,15 @@
     }
   }
 
-  async function focusHistoryTab(url) {
-    if (!url || typeof chrome === 'undefined' || !chrome.tabs?.query) return;
+  async function openHistoryOpenTab(url) {
+    if (!url) return;
 
-    const allTabs = await chrome.tabs.query({});
-    const currentWindow = chrome.windows?.getCurrent ? await chrome.windows.getCurrent() : null;
-    let matches = allTabs.filter(tab => tab.url === url);
-
-    if (matches.length === 0) {
-      try {
-        const targetHost = new URL(url).hostname;
-        matches = allTabs.filter(tab => {
-          try {
-            return new URL(tab.url).hostname === targetHost;
-          } catch {
-            return false;
-          }
-        });
-      } catch {}
+    if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+      await chrome.tabs.create({ url, active: true });
+      return;
     }
 
-    if (matches.length === 0) return;
-
-    const match = matches.find(tab => currentWindow && tab.windowId !== currentWindow.id) || matches[0];
-    await chrome.tabs.update(match.id, { active: true });
-    if (chrome.windows?.update) {
-      await chrome.windows.update(match.windowId, { focused: true });
-    }
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   async function closeHistoryTab(url, tabId) {
