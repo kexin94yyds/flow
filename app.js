@@ -409,36 +409,18 @@ async function closeTabsExact(urls) {
 }
 
 /**
- * focusTab(url)
+ * openUrlInNewTab(url)
  *
- * Switches Chrome to the tab with the given URL (exact match first,
- * then hostname fallback). Also brings the window to the front.
+ * Opens a fresh Chrome tab so the current Flow / Tab Out page stays
+ * available instead of being replaced or hidden by an existing tab.
  */
-async function focusTab(url) {
+async function openUrlInNewTab(url) {
   if (!url) return;
-  const allTabs = await chrome.tabs.query({});
-  const currentWindow = await chrome.windows.getCurrent();
-
-  // Try exact URL match first
-  let matches = allTabs.filter(t => t.url === url);
-
-  // Fall back to hostname match
-  if (matches.length === 0) {
-    try {
-      const targetHost = new URL(url).hostname;
-      matches = allTabs.filter(t => {
-        try { return new URL(t.url).hostname === targetHost; }
-        catch { return false; }
-      });
-    } catch {}
+  if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
+    await chrome.tabs.create({ url, active: true });
+    return;
   }
-
-  if (matches.length === 0) return;
-
-  // Prefer a match in a different window so it actually switches windows
-  const match = matches.find(t => t.windowId !== currentWindow.id) || matches[0];
-  await chrome.tabs.update(match.id, { active: true });
-  await chrome.windows.update(match.windowId, { focused: true });
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /**
@@ -1675,7 +1657,7 @@ function renderOpenTabItem(tab, urlCounts) {
 
   return `
     <div class="deferred-item open-tab-item" data-tab-url="${safeUrl}">
-      <button class="open-tab-favicon" data-action="focus-tab" data-tab-url="${safeUrl}" title="Open tab">
+      <button class="open-tab-favicon" data-action="focus-tab" data-tab-url="${safeUrl}" title="Open in new tab">
         ${faviconUrl ? `<img src="${escapeHtml(faviconUrl)}" alt="" data-hide-on-error="true" loading="lazy" decoding="async">` : ''}
       </button>
       <div class="deferred-info">
@@ -2083,10 +2065,10 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Focus a specific tab ----
+  // ---- Open a specific URL in a new tab ----
   if (action === 'focus-tab') {
     const tabUrl = actionEl.dataset.tabUrl;
-    if (tabUrl) await focusTab(tabUrl);
+    if (tabUrl) await openUrlInNewTab(tabUrl);
     return;
   }
 
@@ -2095,14 +2077,7 @@ document.addEventListener('click', async (e) => {
     const tabUrl = actionEl.dataset.tabUrl;
     if (!tabUrl) return;
 
-    const allTabs = await chrome.tabs.query({});
-    const match = allTabs.find(t => t.url === tabUrl);
-    if (match) {
-      await chrome.tabs.update(match.id, { active: true });
-      await chrome.windows.update(match.windowId, { focused: true });
-    } else {
-      await chrome.tabs.create({ url: tabUrl, active: true });
-    }
+    await openUrlInNewTab(tabUrl);
     return;
   }
 
