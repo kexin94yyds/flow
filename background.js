@@ -33,17 +33,8 @@ async function saveNewTabDestination(destination) {
   }
 }
 
-async function openUrlInCurrentOrNewTab(tab, url) {
-  if (typeof tab?.id === 'number') {
-    try {
-      await chrome.tabs.update(tab.id, { url });
-      return;
-    } catch {
-      // Fall through and create a tab if Chrome will not update this one.
-    }
-  }
-
-  await chrome.tabs.create({ url });
+async function openUrlInNewTab(url) {
+  await chrome.tabs.create({ url, active: true });
 }
 
 // ─── Badge updater ────────────────────────────────────────────────────────────
@@ -108,7 +99,7 @@ chrome.runtime.onStartup.addListener(() => {
 // Open the dashboard when the user clicks the extension from Chrome's toolbar
 // or extensions menu without changing the saved new-tab destination.
 chrome.action.onClicked.addListener(async (tab) => {
-  await openUrlInCurrentOrNewTab(tab, chrome.runtime.getURL('index.html?tabout=1'));
+  await openUrlInNewTab(chrome.runtime.getURL('index.html?tabout=1'));
 });
 
 // Update badge whenever a tab is opened
