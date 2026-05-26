@@ -1662,6 +1662,25 @@ async function renderSavedTabsAsPreviewCards(activeItems) {
   queueLinkPreviewFetches(active.map(savedItemToPreviewTab));
 }
 
+function getSavedUrlSet(activeItems) {
+  return new Set((activeItems || []).map(item => item.url).filter(Boolean));
+}
+
+function markTabAsSavedInOpenList(tabUrl) {
+  document.querySelectorAll('[data-action="defer-single-tab"]').forEach(button => {
+    if (button.dataset.tabUrl !== tabUrl) return;
+
+    button.disabled = true;
+    button.classList.remove('is-saving');
+    button.classList.add('is-saved');
+    button.setAttribute('aria-disabled', 'true');
+    button.setAttribute('title', 'Saved for later');
+
+    const label = button.querySelector('span');
+    if (label) label.textContent = 'Saved';
+  });
+}
+
 function renderOpenTabItem(tab, urlCounts, savedUrls = new Set()) {
   const domain = domainFromUrl(tab.url);
   const title = tab.title || tab.url || 'Untitled';
@@ -1870,7 +1889,7 @@ async function renderStaticDashboard() {
   // --- Render saved items as app-style cards, with open tabs in the side rail ---
   await loadLinkPreviewCache();
   await renderSavedTabsAsPreviewCards(savedTabs.active);
-  renderOpenTabsColumn(realTabs);
+  renderOpenTabsColumn(realTabs, getSavedUrlSet(savedTabs.active));
   return;
 
   // --- Group tabs by domain ---
@@ -2160,55 +2179,36 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Save a single tab for later (then close it) ----
+  // ---- Save a single tab for later without closing it ----
   if (action === 'defer-single-tab') {
     e.stopPropagation();
     const tabUrl   = actionEl.dataset.tabUrl;
     const tabTitle = actionEl.dataset.tabTitle || tabUrl;
     if (!tabUrl) return;
 
-    // Save to chrome.storage.local
+    actionEl.disabled = true;
+    actionEl.classList.add('is-saving');
+
     try {
       await saveTabForLater({ url: tabUrl, title: tabTitle });
     } catch (err) {
+      actionEl.disabled = false;
+      actionEl.classList.remove('is-saving');
       console.error('[tab-out] Failed to save tab:', err);
       showToast('Failed to save tab');
       return;
     }
 
-    // Close the tab in Chrome
-    const allTabs = await chrome.tabs.query({});
-    const match   = allTabs.find(t => t.url === tabUrl);
-    if (match) await chrome.tabs.remove(match.id);
-    await fetchOpenTabs();
+    const savedTabs = await getSavedTabs();
+    await renderSavedTabsAsPreviewCards(savedTabs.active);
+    markTabAsSavedInOpenList(tabUrl);
 
-    // Animate chip/card out
-    const chip = actionEl.closest('.page-chip');
-    const previewCard = actionEl.closest('.link-preview-card');
-    const openTabItem = actionEl.closest('.open-tab-item');
-    if (chip) {
-      chip.style.transition = 'opacity 0.2s, transform 0.2s';
-      chip.style.opacity    = '0';
-      chip.style.transform  = 'scale(0.8)';
-      setTimeout(() => chip.remove(), 200);
-    }
-    if (previewCard) {
-      previewCard.classList.add('closing');
-      setTimeout(() => {
-        previewCard.remove();
-        renderDashboard();
-      }, 250);
-    }
-    if (openTabItem) {
-      openTabItem.classList.add('removing');
-      setTimeout(() => {
-        openTabItem.remove();
-        renderDashboard();
-      }, 300);
+    const dateEl = document.getElementById('dateDisplay') || document.getElementById('date');
+    if (dateEl) {
+      dateEl.textContent = `${savedTabs.active.length} saved · ${getRealTabs().length} open`;
     }
 
     showToast('Saved for later');
-    if (!previewCard && !openTabItem) await renderDashboard();
     return;
   }
 
