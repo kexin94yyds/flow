@@ -409,13 +409,26 @@ async function closeTabsExact(urls) {
 }
 
 /**
- * openUrlInNewTab(url)
+ * openUrlInExistingTabOrNew(url)
  *
- * Opens a fresh Chrome tab so the current Flow / Tab Out page stays
- * available instead of being replaced or hidden by an existing tab.
+ * Focuses an already-open Chrome tab for the URL; opens a new tab only
+ * when the URL is not already present.
  */
-async function openUrlInNewTab(url) {
+async function openUrlInExistingTabOrNew(url) {
   if (!url) return;
+
+  if (typeof chrome !== 'undefined' && chrome.tabs?.query) {
+    const allTabs = await chrome.tabs.query({});
+    const match = allTabs.find(tab => tab.url === url && typeof tab.id === 'number');
+    if (match) {
+      await chrome.tabs.update(match.id, { active: true });
+      if (chrome.windows?.update && typeof match.windowId === 'number') {
+        await chrome.windows.update(match.windowId, { focused: true });
+      }
+      return;
+    }
+  }
+
   if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
     await chrome.tabs.create({ url, active: true });
     return;
@@ -2101,10 +2114,10 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // ---- Open a specific URL in a new tab ----
+  // ---- Focus a specific URL, opening it only when missing ----
   if (action === 'focus-tab') {
     const tabUrl = actionEl.dataset.tabUrl;
-    if (tabUrl) await openUrlInNewTab(tabUrl);
+    if (tabUrl) await openUrlInExistingTabOrNew(tabUrl);
     return;
   }
 
@@ -2113,7 +2126,7 @@ document.addEventListener('click', async (e) => {
     const tabUrl = actionEl.dataset.tabUrl;
     if (!tabUrl) return;
 
-    await openUrlInNewTab(tabUrl);
+    await openUrlInExistingTabOrNew(tabUrl);
     return;
   }
 
