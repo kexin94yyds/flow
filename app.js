@@ -529,15 +529,31 @@ function checkTabOutDupes() {
  */
 async function saveTabForLater(tab) {
   const { deferred = [] } = await chrome.storage.local.get('deferred');
-  deferred.push({
+  const existing = deferred.find(item =>
+    !item.dismissed &&
+    !item.completed &&
+    item.url === tab.url
+  );
+
+  if (existing) {
+    if (tab.title && existing.title !== tab.title) {
+      existing.title = tab.title;
+      await chrome.storage.local.set({ deferred });
+    }
+    return existing;
+  }
+
+  const saved = {
     id:        Date.now().toString(),
     url:       tab.url,
     title:     tab.title,
     savedAt:   new Date().toISOString(),
     completed: false,
     dismissed: false,
-  });
+  };
+  deferred.push(saved);
   await chrome.storage.local.set({ deferred });
+  return saved;
 }
 
 async function loadFlowItems() {
@@ -1646,7 +1662,7 @@ async function renderSavedTabsAsPreviewCards(activeItems) {
   queueLinkPreviewFetches(active.map(savedItemToPreviewTab));
 }
 
-function renderOpenTabItem(tab, urlCounts) {
+function renderOpenTabItem(tab, urlCounts, savedUrls = new Set()) {
   const domain = domainFromUrl(tab.url);
   const title = tab.title || tab.url || 'Untitled';
   const faviconUrl = tab.favIconUrl || fallbackFaviconUrl(tab.url);
@@ -1654,6 +1670,7 @@ function renderOpenTabItem(tab, urlCounts) {
   const safeTitle = escapeHtml(title);
   const tabTime = formatTabCardTime(tab);
   const count = urlCounts[tab.url] || 1;
+  const isSaved = savedUrls.has(tab.url);
 
   return `
     <div class="deferred-item open-tab-item" data-tab-url="${safeUrl}">
@@ -1668,9 +1685,9 @@ function renderOpenTabItem(tab, urlCounts) {
           ${count > 1 ? `<span>${count}x</span>` : ''}
         </div>
       </div>
-      <button class="open-tab-save-btn" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="Save to Flow">
+      <button class="open-tab-save-btn${isSaved ? ' is-saved' : ''}" data-action="defer-single-tab" data-tab-url="${safeUrl}" data-tab-title="${safeTitle}" title="${isSaved ? 'Saved for later' : 'Save for later'}"${isSaved ? ' disabled aria-disabled="true"' : ''}>
         ${ICONS.archive}
-        <span>Save</span>
+        <span>${isSaved ? 'Saved' : 'Save'}</span>
       </button>
       <button class="deferred-dismiss" data-action="close-single-tab" data-tab-url="${safeUrl}" title="Close tab">
         ${ICONS.close}
@@ -1678,7 +1695,7 @@ function renderOpenTabItem(tab, urlCounts) {
     </div>`;
 }
 
-function renderOpenTabsColumn(realTabs) {
+function renderOpenTabsColumn(realTabs, savedUrls = new Set()) {
   const column = document.getElementById('deferredColumn');
   const list = document.getElementById('deferredList');
   const empty = document.getElementById('deferredEmpty');
@@ -1708,7 +1725,7 @@ function renderOpenTabsColumn(realTabs) {
   if (countEl) {
     countEl.textContent = `${realTabs.length} tab${realTabs.length !== 1 ? 's' : ''}${duplicates ? ` · ${duplicates} dupes` : ''}`;
   }
-  list.innerHTML = displayTabs.map(tab => renderOpenTabItem(tab, urlCounts)).join('');
+  list.innerHTML = displayTabs.map(tab => renderOpenTabItem(tab, urlCounts, savedUrls)).join('');
   list.style.display = 'block';
   empty.style.display = 'none';
 }
