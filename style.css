@@ -1604,6 +1604,21 @@ footer { animation: fadeUp 0.5s ease 0.65s both; }
   transform: translateY(-1px);
 }
 
+.open-tab-save-btn:disabled,
+.open-tab-save-btn.is-saved {
+  background: rgba(90, 122, 98, 0.12);
+  border-color: rgba(90, 122, 98, 0.24);
+  color: rgba(90, 122, 98, 0.76);
+  cursor: default;
+}
+
+.open-tab-save-btn:disabled:hover,
+.open-tab-save-btn.is-saved:hover {
+  background: rgba(90, 122, 98, 0.12);
+  border-color: rgba(90, 122, 98, 0.24);
+  transform: none;
+}
+
 /* Slide-out animation for items being removed */
 .deferred-item.removing {
   opacity: 0;
